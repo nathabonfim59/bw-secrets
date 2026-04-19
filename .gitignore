@@ -1,0 +1,6 @@
+/.opencode/plans
+bin/
+bw-secrets
+dist/
+/.agents/research/
+/docs/bitwarden/openapi/
