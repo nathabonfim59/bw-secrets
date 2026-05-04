@@ -1,11 +1,8 @@
 package cli
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/nathabonfim59/bw-secrets/internal/keyring"
@@ -38,29 +35,4 @@ var statusCmd = &cobra.Command{
 		fmt.Fprintln(os.Stderr)
 		return nil
 	},
-}
-
-func tokenExpiry(accessToken string) time.Duration {
-	parts := strings.Split(accessToken, ".")
-	if len(parts) != 3 {
-		return -1
-	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		// Try standard base64
-		payload, err = base64.StdEncoding.DecodeString(parts[1])
-		if err != nil {
-			return -1
-		}
-	}
-	var claims struct {
-		Exp int64 `json:"exp"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return -1
-	}
-	if claims.Exp == 0 {
-		return -1
-	}
-	return time.Until(time.Unix(claims.Exp, 0))
 }

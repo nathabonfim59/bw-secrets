@@ -576,8 +576,9 @@ Same as lock — clears keyring. (Future: might add server-side token revocation
 4. Call client.Sync() → SyncResponse
 5. Create vault.New(syncResp, symmetricKey, serverURL, email)
 6. Call vault.Resolve(parsedURI)
-7. Print resolved value to stdout
-8. Exit 0 on success, 1 on error
+7. If --reveal: print resolved value to stdout
+8. If no --reveal: print "resolved: <vault>/<item>/<field> (use --reveal to output)" to stderr
+9. Exit 0 on success, 1 on error
 ```
 
 #### `bw-secrets list [vault]`
@@ -854,11 +855,15 @@ Flags:
 
 `bw-secrets get`
 ```
-Usage:  bw-secrets get <uri>
+Usage:  bw-secrets get [--reveal] <uri>
 Args:   uri = bw://VaultName/ItemName/FieldName
 Flags:
+  --reveal          Output the actual secret value to stdout (required for sensitive fields)
   --out-file, -o    Write resolved value to file instead of stdout
   --json            Output JSON with metadata (field name, item name, vault)
+
+Security: By default, secrets are NOT printed. The command resolves the reference
+and prints metadata to stderr. Use --reveal to actually output the value.
 ```
 
 `bw-secrets list`
@@ -887,7 +892,8 @@ Flags:
 
 ### Error output conventions
 - All errors go to stderr
-- Successful `get` output goes to stdout (plain text, no prefix)
+- Successful `get` without `--reveal` prints metadata to stderr (never the secret)
+- Successful `get --reveal` output goes to stdout (plain text, no prefix)
 - Exit codes: 0 = success, 1 = error, 2 = not logged in
 
 ---
@@ -937,7 +943,8 @@ Input:  bw://Personal/Google/password
    - value := parsed.Decrypt(symKey)
 
 6. Output
-   fmt.Println(value)
+    If --reveal: fmt.Println(value)
+    Else: print "resolved: <vault>/<item>/<field> (use --reveal to output)" to stderr
 ```
 
 **Wildcard support (future):**
