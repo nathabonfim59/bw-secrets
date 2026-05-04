@@ -29,9 +29,13 @@ in the OS keyring for subsequent commands.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reader := os.Stdin
 
-		serverURL, err := prompt(reader, "Server URL", "https://vault.bitwarden.com")
-		if err != nil {
-			return fmt.Errorf("reading server URL: %w", err)
+		serverURL := serverURL()
+		if serverURL == "" {
+			var err error
+			serverURL, err = prompt(reader, "Server URL", "https://vault.bitwarden.com")
+			if err != nil {
+				return fmt.Errorf("reading server URL: %w", err)
+			}
 		}
 		serverURL = strings.TrimRight(serverURL, "/")
 

@@ -22,12 +22,17 @@ func getClient() (*api.Client, *keyring.Credentials, error) {
 		return nil, nil, nil
 	}
 
+	url := serverURL()
+	if url == "" {
+		url = creds.ServerURL
+	}
+
 	expiry := tokenExpiry(creds.AccessToken)
 	if expiry >= 0 && expiry < 5*time.Minute {
-		client := api.NewClient(creds.ServerURL)
+		client := api.NewClient(url)
 		tokenResp, err := client.RefreshToken(context.Background(), creds.RefreshToken)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Session expired — run 'bw-secrets login'")
+			fmt.Fprintln(os.Stderr, "Session expired — run 'bw-secrets unlock'")
 			os.Exit(2)
 			return nil, nil, nil
 		}
@@ -38,7 +43,7 @@ func getClient() (*api.Client, *keyring.Credentials, error) {
 		}
 	}
 
-	client := api.NewClient(creds.ServerURL)
+	client := api.NewClient(url)
 	client.SetAccessToken(creds.AccessToken)
 	return client, creds, nil
 }
