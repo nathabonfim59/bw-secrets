@@ -1,0 +1,3142 @@
+{
+	"openapi": "3.0.4",
+	"info": {
+		"title": "Bitwarden Public API",
+		"description": "This schema documents the endpoints available to the Public API, which provides\norganizations tools for managing members, collections, groups, event logs, and policies.\nIf you are looking for the Vault Management API, refer instead to\n[this document](https://bitwarden.com/help/vault-management-api/).\n\n**Note:** your authorization must match the server you have selected.",
+		"contact": {
+			"name": "Bitwarden Support",
+			"url": "https://bitwarden.com",
+			"email": "support@bitwarden.com"
+		},
+		"license": {
+			"name": "GNU Affero General Public License v3.0",
+			"url": "https://github.com/bitwarden/server/blob/master/LICENSE.txt"
+		},
+		"version": "latest"
+	},
+	"servers": [
+		{
+			"url": "https://api.bitwarden.com",
+			"description": "US server"
+		},
+		{
+			"url": "https://api.bitwarden.eu",
+			"description": "EU server"
+		}
+	],
+	"paths": {
+		"/public/collections/{id}": {
+			"get": {
+				"tags": [
+					"Collections"
+				],
+				"summary": "Retrieve a collection.",
+				"description": "Retrieves the details of an existing collection. You need only supply the unique collection identifier\nthat was returned upon collection creation.",
+				"operationId": "Collections_Get",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the collection to be retrieved.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Get",
+				"x-action-name-snake-case": "get",
+				"x-source-file": "src/Api/Public/Controllers/CollectionsController.cs",
+				"x-source-line": 46
+			},
+			"put": {
+				"tags": [
+					"Collections"
+				],
+				"summary": "Update a collection.",
+				"description": "Updates the specified collection object. If a property is not provided,\nthe value of the existing property will be reset.",
+				"operationId": "Collections_Put",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the collection to be updated.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CollectionUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CollectionUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/CollectionUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Put",
+				"x-action-name-snake-case": "put",
+				"x-source-file": "src/Api/Public/Controllers/CollectionsController.cs",
+				"x-source-line": 92
+			},
+			"delete": {
+				"tags": [
+					"Collections"
+				],
+				"summary": "Delete a collection.",
+				"description": "Permanently deletes a collection. This cannot be undone.",
+				"operationId": "Collections_Delete",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the collection to be deleted.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Delete",
+				"x-action-name-snake-case": "delete",
+				"x-source-file": "src/Api/Public/Controllers/CollectionsController.cs",
+				"x-source-line": 116
+			}
+		},
+		"/public/collections": {
+			"get": {
+				"tags": [
+					"Collections"
+				],
+				"summary": "List all collections.",
+				"description": "Returns a list of your organization's collections.\nCollection objects listed in this call do not include information about their associated groups.",
+				"operationId": "Collections_List",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModelListResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModelListResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CollectionResponseModelListResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "List",
+				"x-action-name-snake-case": "list",
+				"x-source-file": "src/Api/Public/Controllers/CollectionsController.cs",
+				"x-source-line": 67
+			}
+		},
+		"/public/events": {
+			"get": {
+				"tags": [
+					"Events"
+				],
+				"summary": "List all events.",
+				"description": "Returns a filtered list of your organization's event logs, paged by a continuation token.\nIf no filters are provided, it will return the last 30 days of event for the organization.",
+				"operationId": "Events_List",
+				"parameters": [
+					{
+						"name": "start",
+						"in": "query",
+						"description": "The start date. Must be less than the end date.",
+						"schema": {
+							"type": "string",
+							"format": "date-time"
+						}
+					},
+					{
+						"name": "end",
+						"in": "query",
+						"description": "The end date. Must be greater than the start date.",
+						"schema": {
+							"type": "string",
+							"format": "date-time"
+						}
+					},
+					{
+						"name": "actingUserId",
+						"in": "query",
+						"description": "The unique identifier of the user that performed the event.",
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					},
+					{
+						"name": "itemId",
+						"in": "query",
+						"description": "The unique identifier of the related item that the event describes.",
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					},
+					{
+						"name": "secretId",
+						"in": "query",
+						"description": "The unique identifier of the related secret that the event describes.",
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					},
+					{
+						"name": "projectId",
+						"in": "query",
+						"description": "The unique identifier of the related project that the event describes.",
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					},
+					{
+						"name": "continuationToken",
+						"in": "query",
+						"description": "A cursor for use in pagination.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/EventResponseModelPagedListResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventResponseModelPagedListResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventResponseModelPagedListResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "List",
+				"x-action-name-snake-case": "list",
+				"x-source-file": "src/Api/Dirt/Public/Controllers/EventsController.cs",
+				"x-source-line": 59
+			}
+		},
+		"/public/groups/{id}": {
+			"get": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Retrieve a group.",
+				"description": "Retrieves the details of an existing group. You need only supply the unique group identifier\nthat was returned upon group creation.",
+				"operationId": "Groups_Get",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the group to be retrieved.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Get",
+				"x-action-name-snake-case": "get",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 53
+			},
+			"put": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Update a group.",
+				"description": "Updates the specified group object. If a property is not provided,\nthe value of the existing property will be reset.",
+				"operationId": "Groups_Put",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the group to be updated.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Put",
+				"x-action-name-snake-case": "put",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 137
+			},
+			"delete": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Delete a group.",
+				"description": "Permanently deletes a group. This cannot be undone.",
+				"operationId": "Groups_Delete",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the group to be deleted.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Delete",
+				"x-action-name-snake-case": "delete",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 186
+			}
+		},
+		"/public/groups/{id}/member-ids": {
+			"get": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Retrieve a groups's member ids",
+				"description": "Retrieves the unique identifiers for all members that are associated with this group. You need only\nsupply the unique group identifier that was returned upon group creation.",
+				"operationId": "Groups_GetMemberIds",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the group to be retrieved.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							},
+							"application/json": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							},
+							"text/json": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "GetMemberIds",
+				"x-action-name-snake-case": "get_member_ids",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 76
+			},
+			"put": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Update a group's members.",
+				"description": "Updates the specified group's member associations.",
+				"operationId": "Groups_PutMemberIds",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the group to be updated.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMemberIdsRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMemberIdsRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMemberIdsRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "PutMemberIds",
+				"x-action-name-snake-case": "put_member_ids",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 165
+			}
+		},
+		"/public/groups": {
+			"get": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "List all groups.",
+				"description": "Returns a list of your organization's groups.\nGroup objects listed in this call include information about their associated collections.",
+				"operationId": "Groups_List",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModelListResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModelListResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModelListResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "List",
+				"x-action-name-snake-case": "list",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 96
+			},
+			"post": {
+				"tags": [
+					"Groups"
+				],
+				"summary": "Create a group.",
+				"description": "Creates a new group object.",
+				"operationId": "Groups_Post",
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/GroupCreateUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "Post",
+				"x-action-name-snake-case": "post",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/GroupsController.cs",
+				"x-source-line": 114
+			}
+		},
+		"/public/members/{id}": {
+			"get": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Retrieve a member.",
+				"description": "Retrieves the details of an existing member of the organization. You need only supply the\nunique member identifier that was returned upon member creation.",
+				"operationId": "Members_Get",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be retrieved.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Get",
+				"x-action-name-snake-case": "get",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 102
+			},
+			"put": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Update a member.",
+				"description": "Updates the specified member object. If a property is not provided,\nthe value of the existing property will be reset.",
+				"operationId": "Members_Put",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be updated.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Put",
+				"x-action-name-snake-case": "put",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 233
+			},
+			"delete": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Remove a member.",
+				"description": "Removes a member from the organization. This cannot be undone. The user account will still remain.",
+				"operationId": "Members_Remove",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be removed.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Remove",
+				"x-action-name-snake-case": "remove",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 291
+			}
+		},
+		"/public/members/{id}/group-ids": {
+			"get": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Retrieve a member's group ids",
+				"description": "Retrieves the unique identifiers for all groups that are associated with this member. You need only\nsupply the unique member identifier that was returned upon member creation.",
+				"operationId": "Members_GetGroupIds",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be retrieved.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							},
+							"application/json": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							},
+							"text/json": {
+								"schema": {
+									"uniqueItems": true,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"format": "uuid"
+									}
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "GetGroupIds",
+				"x-action-name-snake-case": "get_group_ids",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 125
+			},
+			"put": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Update a member's groups.",
+				"description": "Updates the specified member's group associations.",
+				"operationId": "Members_PutGroupIds",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be updated.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateGroupIdsRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateGroupIdsRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateGroupIdsRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "PutGroupIds",
+				"x-action-name-snake-case": "put_group_ids",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 270
+			}
+		},
+		"/public/members": {
+			"get": {
+				"tags": [
+					"Members"
+				],
+				"summary": "List all members.",
+				"description": "Returns a list of your organization's members.\nMember objects listed in this call include information about their associated collections.",
+				"operationId": "Members_List",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModelListResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModelListResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModelListResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "List",
+				"x-action-name-snake-case": "list",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 145
+			},
+			"post": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Create a member.",
+				"description": "Creates a new member object by inviting a user to the organization.",
+				"operationId": "Members_Post",
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberCreateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberCreateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/MemberCreateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "Post",
+				"x-action-name-snake-case": "post",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 168
+			}
+		},
+		"/public/members/{id}/reinvite": {
+			"post": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Re-invite a member.",
+				"description": "Re-sends the invitation email to an organization member.",
+				"operationId": "Members_PostReinvite",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to re-invite.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "PostReinvite",
+				"x-action-name-snake-case": "post_reinvite",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 313
+			}
+		},
+		"/public/members/{id}/revoke": {
+			"post": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Revoke a member's access to an organization.",
+				"operationId": "Members_Revoke",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The ID of the member to be revoked.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Revoke",
+				"x-action-name-snake-case": "revoke",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 332
+			}
+		},
+		"/public/members/{id}/restore": {
+			"post": {
+				"tags": [
+					"Members"
+				],
+				"summary": "Restore a member.",
+				"description": "Restores a previously revoked member of the organization.",
+				"operationId": "Members_Restore",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"description": "The identifier of the member to be restored.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Restore",
+				"x-action-name-snake-case": "restore",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/MembersController.cs",
+				"x-source-line": 366
+			}
+		},
+		"/public/organization/subscription": {
+			"get": {
+				"tags": [
+					"Organization"
+				],
+				"summary": "Retrieves the subscription details for the current organization.",
+				"operationId": "Organization_GetSubscription",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/OrganizationSubscriptionDetailsResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrganizationSubscriptionDetailsResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrganizationSubscriptionDetailsResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "GetSubscription",
+				"x-action-name-snake-case": "get_subscription",
+				"x-source-file": "src/Api/Billing/Public/Controllers/OrganizationController.cs",
+				"x-source-line": 57
+			},
+			"put": {
+				"tags": [
+					"Organization"
+				],
+				"summary": "Update the organization's current subscription for Password Manager and/or Secrets Manager.",
+				"operationId": "Organization_PostSubscription",
+				"requestBody": {
+					"description": "The request model containing the updated subscription information.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationSubscriptionUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationSubscriptionUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationSubscriptionUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "PostSubscription",
+				"x-action-name-snake-case": "post_subscription",
+				"x-source-file": "src/Api/Billing/Public/Controllers/OrganizationController.cs",
+				"x-source-line": 99
+			}
+		},
+		"/public/organization/import": {
+			"post": {
+				"tags": [
+					"Organization"
+				],
+				"summary": "Import members and groups.",
+				"description": "Import members and groups from an external system.",
+				"operationId": "Organization_Import",
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationImportRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationImportRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/OrganizationImportRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/OkResult"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OkResult"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OkResult"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "Import",
+				"x-action-name-snake-case": "import",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/OrganizationController.cs",
+				"x-source-line": 52
+			}
+		},
+		"/public/policies/{type}": {
+			"get": {
+				"tags": [
+					"Policies"
+				],
+				"summary": "Retrieve a policy.",
+				"description": "Retrieves the details of a policy.",
+				"operationId": "Policies_Get",
+				"parameters": [
+					{
+						"name": "type",
+						"in": "path",
+						"description": "The type of policy to be retrieved.",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/PolicyType"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Get",
+				"x-action-name-snake-case": "get",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/PoliciesController.cs",
+				"x-source-line": 46
+			},
+			"put": {
+				"tags": [
+					"Policies"
+				],
+				"summary": "Update a policy.",
+				"description": "Updates the specified policy. If a property is not provided,\nthe value of the existing property will be reset.",
+				"operationId": "Policies_Put",
+				"parameters": [
+					{
+						"name": "type",
+						"in": "path",
+						"description": "The type of policy to be updated.",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/PolicyType"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "The request model.",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PolicyUpdateRequestModel"
+							}
+						},
+						"text/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PolicyUpdateRequestModel"
+							}
+						},
+						"application/*+json": {
+							"schema": {
+								"$ref": "#/components/schemas/PolicyUpdateRequestModel"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModel"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorResponseModel"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found"
+					}
+				},
+				"x-action-name": "Put",
+				"x-action-name-snake-case": "put",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/PoliciesController.cs",
+				"x-source-line": 85
+			}
+		},
+		"/public/policies": {
+			"get": {
+				"tags": [
+					"Policies"
+				],
+				"summary": "List all policies.",
+				"description": "Returns a list of your organization's policies.",
+				"operationId": "Policies_List",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"text/plain": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModelListResponseModel"
+								}
+							},
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModelListResponseModel"
+								}
+							},
+							"text/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PolicyResponseModelListResponseModel"
+								}
+							}
+						}
+					}
+				},
+				"x-action-name": "List",
+				"x-action-name-snake-case": "list",
+				"x-source-file": "src/Api/AdminConsole/Public/Controllers/PoliciesController.cs",
+				"x-source-line": 65
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"AssociationWithPermissionsRequestModel": {
+				"required": [
+					"id",
+					"readOnly"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The associated object's unique identifier.",
+						"format": "uuid",
+						"example": "bfbc8338-e329-4dc0-b0c9-317c2ebf1a09"
+					},
+					"readOnly": {
+						"type": "boolean",
+						"description": "When true, the read only permission will not allow the user or group to make changes to items."
+					},
+					"hidePasswords": {
+						"type": "boolean",
+						"description": "When true, the hide passwords permission will not allow the user or group to view passwords.\nThis prevents easy copy-and-paste of hidden items, however it may not completely prevent user access.",
+						"nullable": true
+					},
+					"manage": {
+						"type": "boolean",
+						"description": "When true, the manage permission allows a user to both edit the ciphers within a collection and edit the users/groups that are assigned to the collection.\nThis field will not affect behavior until your organization is using the latest collection enhancements (Releasing Q1, 2024)",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"AssociationWithPermissionsResponseModel": {
+				"required": [
+					"id",
+					"readOnly"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The associated object's unique identifier.",
+						"format": "uuid",
+						"example": "bfbc8338-e329-4dc0-b0c9-317c2ebf1a09"
+					},
+					"readOnly": {
+						"type": "boolean",
+						"description": "When true, the read only permission will not allow the user or group to make changes to items."
+					},
+					"hidePasswords": {
+						"type": "boolean",
+						"description": "When true, the hide passwords permission will not allow the user or group to view passwords.\nThis prevents easy copy-and-paste of hidden items, however it may not completely prevent user access.",
+						"nullable": true
+					},
+					"manage": {
+						"type": "boolean",
+						"description": "When true, the manage permission allows a user to both edit the ciphers within a collection and edit the users/groups that are assigned to the collection.\nThis field will not affect behavior until your organization is using the latest collection enhancements (Releasing Q1, 2024)",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"CollectionResponseModel": {
+				"required": [
+					"id",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this collection to another system.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "collection"
+					},
+					"id": {
+						"type": "string",
+						"description": "The collection's unique identifier.",
+						"format": "uuid",
+						"example": "539a36c5-e0d2-4cf9-979e-51ecf5cf6593"
+					},
+					"groups": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsResponseModel"
+						},
+						"description": "The associated groups that this collection is assigned to.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false,
+				"description": "A collection."
+			},
+			"CollectionResponseModelListResponseModel": {
+				"required": [
+					"data",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "list"
+					},
+					"data": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/CollectionResponseModel"
+						},
+						"description": "An array containing the actual response elements, paginated by any request parameters."
+					}
+				},
+				"additionalProperties": false
+			},
+			"CollectionUpdateRequestModel": {
+				"type": "object",
+				"properties": {
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this collection to another system.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"groups": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsRequestModel"
+						},
+						"description": "The associated groups that this collection is assigned to.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"DeviceType": {
+				"enum": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					16,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26
+				],
+				"type": "integer",
+				"format": "int32",
+				"x-enum-varnames": [
+					"Android",
+					"iOS",
+					"ChromeExtension",
+					"FirefoxExtension",
+					"OperaExtension",
+					"EdgeExtension",
+					"WindowsDesktop",
+					"MacOsDesktop",
+					"LinuxDesktop",
+					"ChromeBrowser",
+					"FirefoxBrowser",
+					"OperaBrowser",
+					"EdgeBrowser",
+					"IEBrowser",
+					"UnknownBrowser",
+					"AndroidAmazon",
+					"UWP",
+					"SafariBrowser",
+					"VivaldiBrowser",
+					"VivaldiExtension",
+					"SafariExtension",
+					"SDK",
+					"Server",
+					"WindowsCLI",
+					"MacOsCLI",
+					"LinuxCLI",
+					"DuckDuckGoBrowser"
+				]
+			},
+			"ErrorResponseModel": {
+				"required": [
+					"message",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "error"
+					},
+					"message": {
+						"minLength": 1,
+						"type": "string",
+						"description": "A human-readable message providing details about the error.",
+						"example": "The request model is invalid."
+					},
+					"errors": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"description": "If multiple errors occurred, they are listed in dictionary. Errors related to a specific\nrequest parameter will include a dictionary key describing that parameter.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"EventResponseModel": {
+				"required": [
+					"date",
+					"object",
+					"type"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "event"
+					},
+					"type": {
+						"$ref": "#/components/schemas/EventType"
+					},
+					"itemId": {
+						"type": "string",
+						"description": "The unique identifier of the related item that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "3767a302-8208-4dc6-b842-030428a1cfad"
+					},
+					"collectionId": {
+						"type": "string",
+						"description": "The unique identifier of the related collection that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "bce212a4-25f3-4888-8a0a-4c5736d851e0"
+					},
+					"groupId": {
+						"type": "string",
+						"description": "The unique identifier of the related group that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "f29a2515-91d2-4452-b49b-5e8040e6b0f4"
+					},
+					"policyId": {
+						"type": "string",
+						"description": "The unique identifier of the related policy that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "f29a2515-91d2-4452-b49b-5e8040e6b0f4"
+					},
+					"memberId": {
+						"type": "string",
+						"description": "The unique identifier of the related member that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "e68b8629-85eb-4929-92c0-b84464976ba4"
+					},
+					"actingUserId": {
+						"type": "string",
+						"description": "The unique identifier of the user that performed the event.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "a2549f79-a71f-4eb9-9234-eb7247333f94"
+					},
+					"installationId": {
+						"type": "string",
+						"description": "The Unique identifier of the Installation that performed the event.",
+						"format": "uuid",
+						"nullable": true
+					},
+					"date": {
+						"type": "string",
+						"description": "The date/timestamp when the event occurred.",
+						"format": "date-time"
+					},
+					"device": {
+						"$ref": "#/components/schemas/DeviceType"
+					},
+					"ipAddress": {
+						"type": "string",
+						"description": "The IP address of the acting user.",
+						"nullable": true,
+						"example": "172.16.254.1"
+					},
+					"secretId": {
+						"type": "string",
+						"description": "The unique identifier of the related secret that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "e68b8629-85eb-4929-92c0-b84464976ba4"
+					},
+					"projectId": {
+						"type": "string",
+						"description": "The unique identifier of the related project that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "e68b8629-85eb-4929-92c0-b84464976ba4"
+					},
+					"serviceAccountId": {
+						"type": "string",
+						"description": "The unique identifier of the related service account that the event describes.",
+						"format": "uuid",
+						"nullable": true,
+						"example": "e68b8629-85eb-4929-92c0-b84464976ba4"
+					}
+				},
+				"additionalProperties": false,
+				"description": "An event log."
+			},
+			"EventResponseModelPagedListResponseModel": {
+				"required": [
+					"data",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "list"
+					},
+					"data": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/EventResponseModel"
+						},
+						"description": "An array containing the actual response elements, paginated by any request parameters."
+					},
+					"continuationToken": {
+						"type": "string",
+						"description": "A cursor for use in pagination.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"EventType": {
+				"enum": [
+					1000,
+					1001,
+					1002,
+					1003,
+					1004,
+					1005,
+					1006,
+					1007,
+					1008,
+					1009,
+					1010,
+					1011,
+					1100,
+					1101,
+					1102,
+					1103,
+					1104,
+					1105,
+					1106,
+					1107,
+					1108,
+					1109,
+					1110,
+					1111,
+					1112,
+					1113,
+					1114,
+					1115,
+					1116,
+					1117,
+					1300,
+					1301,
+					1302,
+					1400,
+					1401,
+					1402,
+					1500,
+					1501,
+					1502,
+					1503,
+					1504,
+					1505,
+					1506,
+					1507,
+					1508,
+					1509,
+					1510,
+					1511,
+					1512,
+					1513,
+					1514,
+					1515,
+					1516,
+					1517,
+					1518,
+					1519,
+					1600,
+					1601,
+					1602,
+					1603,
+					1604,
+					1605,
+					1606,
+					1607,
+					1608,
+					1609,
+					1610,
+					1611,
+					1612,
+					1613,
+					1614,
+					1615,
+					1616,
+					1617,
+					1618,
+					1619,
+					1620,
+					1621,
+					1622,
+					1623,
+					1700,
+					1800,
+					1801,
+					1802,
+					1803,
+					1900,
+					1901,
+					1902,
+					1903,
+					2000,
+					2001,
+					2002,
+					2003,
+					2100,
+					2101,
+					2102,
+					2103,
+					2104,
+					2105,
+					2200,
+					2201,
+					2202,
+					2203,
+					2300,
+					2301,
+					2302,
+					2303,
+					2304,
+					2305
+				],
+				"type": "integer",
+				"format": "int32",
+				"x-enum-varnames": [
+					"User_LoggedIn",
+					"User_ChangedPassword",
+					"User_Updated2fa",
+					"User_Disabled2fa",
+					"User_Recovered2fa",
+					"User_FailedLogIn",
+					"User_FailedLogIn2fa",
+					"User_ClientExportedVault",
+					"User_UpdatedTempPassword",
+					"User_MigratedKeyToKeyConnector",
+					"User_RequestedDeviceApproval",
+					"User_TdeOffboardingPasswordSet",
+					"Cipher_Created",
+					"Cipher_Updated",
+					"Cipher_Deleted",
+					"Cipher_AttachmentCreated",
+					"Cipher_AttachmentDeleted",
+					"Cipher_Shared",
+					"Cipher_UpdatedCollections",
+					"Cipher_ClientViewed",
+					"Cipher_ClientToggledPasswordVisible",
+					"Cipher_ClientToggledHiddenFieldVisible",
+					"Cipher_ClientToggledCardCodeVisible",
+					"Cipher_ClientCopiedPassword",
+					"Cipher_ClientCopiedHiddenField",
+					"Cipher_ClientCopiedCardCode",
+					"Cipher_ClientAutofilled",
+					"Cipher_SoftDeleted",
+					"Cipher_Restored",
+					"Cipher_ClientToggledCardNumberVisible",
+					"Collection_Created",
+					"Collection_Updated",
+					"Collection_Deleted",
+					"Group_Created",
+					"Group_Updated",
+					"Group_Deleted",
+					"OrganizationUser_Invited",
+					"OrganizationUser_Confirmed",
+					"OrganizationUser_Updated",
+					"OrganizationUser_Removed",
+					"OrganizationUser_UpdatedGroups",
+					"OrganizationUser_UnlinkedSso",
+					"OrganizationUser_ResetPassword_Enroll",
+					"OrganizationUser_ResetPassword_Withdraw",
+					"OrganizationUser_AdminResetPassword",
+					"OrganizationUser_ResetSsoLink",
+					"OrganizationUser_FirstSsoLogin",
+					"OrganizationUser_Revoked",
+					"OrganizationUser_Restored",
+					"OrganizationUser_ApprovedAuthRequest",
+					"OrganizationUser_RejectedAuthRequest",
+					"OrganizationUser_Deleted",
+					"OrganizationUser_Left",
+					"OrganizationUser_AutomaticallyConfirmed",
+					"OrganizationUser_SelfRevoked",
+					"OrganizationUser_AdminResetTwoFactor",
+					"Organization_Updated",
+					"Organization_PurgedVault",
+					"Organization_ClientExportedVault",
+					"Organization_VaultAccessed",
+					"Organization_EnabledSso",
+					"Organization_DisabledSso",
+					"Organization_EnabledKeyConnector",
+					"Organization_DisabledKeyConnector",
+					"Organization_SponsorshipsSynced",
+					"Organization_CollectionManagement_Updated",
+					"Organization_CollectionManagement_LimitCollectionCreationEnabled",
+					"Organization_CollectionManagement_LimitCollectionCreationDisabled",
+					"Organization_CollectionManagement_LimitCollectionDeletionEnabled",
+					"Organization_CollectionManagement_LimitCollectionDeletionDisabled",
+					"Organization_CollectionManagement_LimitItemDeletionEnabled",
+					"Organization_CollectionManagement_LimitItemDeletionDisabled",
+					"Organization_CollectionManagement_AllowAdminAccessToAllCollectionItemsEnabled",
+					"Organization_CollectionManagement_AllowAdminAccessToAllCollectionItemsDisabled",
+					"Organization_ItemOrganization_Accepted",
+					"Organization_ItemOrganization_Declined",
+					"Organization_AutoConfirmEnabled_Admin",
+					"Organization_AutoConfirmDisabled_Admin",
+					"Organization_AutoConfirmEnabled_Portal",
+					"Organization_AutoConfirmDisabled_Portal",
+					"Policy_Updated",
+					"ProviderUser_Invited",
+					"ProviderUser_Confirmed",
+					"ProviderUser_Updated",
+					"ProviderUser_Removed",
+					"ProviderOrganization_Created",
+					"ProviderOrganization_Added",
+					"ProviderOrganization_Removed",
+					"ProviderOrganization_VaultAccessed",
+					"OrganizationDomain_Added",
+					"OrganizationDomain_Removed",
+					"OrganizationDomain_Verified",
+					"OrganizationDomain_NotVerified",
+					"Secret_Retrieved",
+					"Secret_Created",
+					"Secret_Edited",
+					"Secret_Deleted",
+					"Secret_Permanently_Deleted",
+					"Secret_Restored",
+					"Project_Retrieved",
+					"Project_Created",
+					"Project_Edited",
+					"Project_Deleted",
+					"ServiceAccount_UserAdded",
+					"ServiceAccount_UserRemoved",
+					"ServiceAccount_GroupAdded",
+					"ServiceAccount_GroupRemoved",
+					"ServiceAccount_Created",
+					"ServiceAccount_Deleted"
+				]
+			},
+			"GroupCreateUpdateRequestModel": {
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"properties": {
+					"name": {
+						"maxLength": 100,
+						"minLength": 0,
+						"type": "string",
+						"description": "The name of the group.",
+						"example": "Development Team"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this group to another system, such as a user directory.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"collections": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsRequestModel"
+						},
+						"description": "The associated collections that this group can access.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"GroupResponseModel": {
+				"required": [
+					"id",
+					"name",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"name": {
+						"maxLength": 100,
+						"minLength": 0,
+						"type": "string",
+						"description": "The name of the group.",
+						"example": "Development Team"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this group to another system, such as a user directory.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "group"
+					},
+					"id": {
+						"type": "string",
+						"description": "The group's unique identifier.",
+						"format": "uuid",
+						"example": "539a36c5-e0d2-4cf9-979e-51ecf5cf6593"
+					},
+					"collections": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsResponseModel"
+						},
+						"description": "The associated collections that this group can access.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false,
+				"description": "A user group."
+			},
+			"GroupResponseModelListResponseModel": {
+				"required": [
+					"data",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "list"
+					},
+					"data": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/GroupResponseModel"
+						},
+						"description": "An array containing the actual response elements, paginated by any request parameters."
+					}
+				},
+				"additionalProperties": false
+			},
+			"MemberCreateRequestModel": {
+				"required": [
+					"email",
+					"type"
+				],
+				"type": "object",
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/OrganizationUserType"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this member to another system, such as a user directory.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"permissions": {
+						"$ref": "#/components/schemas/PermissionsModel"
+					},
+					"collections": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsRequestModel"
+						},
+						"description": "The associated collections that this member can access.",
+						"nullable": true
+					},
+					"groups": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"description": "Ids of the associated groups that this member will belong to",
+						"nullable": true
+					},
+					"email": {
+						"maxLength": 256,
+						"minLength": 0,
+						"type": "string",
+						"description": "The member's email address.",
+						"example": "jsmith@example.com"
+					}
+				},
+				"additionalProperties": false
+			},
+			"MemberResponseModel": {
+				"required": [
+					"email",
+					"id",
+					"object",
+					"resetPasswordEnrolled",
+					"status",
+					"twoFactorEnabled",
+					"type",
+					"userId"
+				],
+				"type": "object",
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/OrganizationUserType"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this member to another system, such as a user directory.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"permissions": {
+						"$ref": "#/components/schemas/PermissionsModel"
+					},
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "member"
+					},
+					"id": {
+						"type": "string",
+						"description": "The member's unique identifier within the organization.",
+						"format": "uuid",
+						"example": "539a36c5-e0d2-4cf9-979e-51ecf5cf6593"
+					},
+					"userId": {
+						"type": "string",
+						"description": "The member's unique identifier across Bitwarden.",
+						"format": "uuid",
+						"example": "48b47ee1-493e-4c67-aef7-014996c40eca"
+					},
+					"name": {
+						"type": "string",
+						"description": "The member's name, set from their user account profile.",
+						"nullable": true,
+						"example": "John Smith"
+					},
+					"email": {
+						"minLength": 1,
+						"type": "string",
+						"description": "The member's email address.",
+						"example": "jsmith@example.com"
+					},
+					"twoFactorEnabled": {
+						"type": "boolean",
+						"description": "Returns `true` if the member has a two-step login method enabled on their user account."
+					},
+					"status": {
+						"$ref": "#/components/schemas/OrganizationUserStatusType"
+					},
+					"collections": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsResponseModel"
+						},
+						"description": "The associated collections that this member can access.",
+						"nullable": true
+					},
+					"resetPasswordEnrolled": {
+						"type": "boolean",
+						"description": "Returns `true` if the member has enrolled in Password Reset assistance within the organization",
+						"readOnly": true
+					},
+					"ssoExternalId": {
+						"type": "string",
+						"description": "SSO external identifier for linking this member to an identity provider.",
+						"nullable": true,
+						"example": "sso_external_id_123456"
+					}
+				},
+				"additionalProperties": false,
+				"description": "An organization member."
+			},
+			"MemberResponseModelListResponseModel": {
+				"required": [
+					"data",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "list"
+					},
+					"data": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/MemberResponseModel"
+						},
+						"description": "An array containing the actual response elements, paginated by any request parameters."
+					}
+				},
+				"additionalProperties": false
+			},
+			"MemberUpdateRequestModel": {
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/OrganizationUserType"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this member to another system, such as a user directory.",
+						"nullable": true,
+						"example": "external_id_123456"
+					},
+					"permissions": {
+						"$ref": "#/components/schemas/PermissionsModel"
+					},
+					"collections": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AssociationWithPermissionsRequestModel"
+						},
+						"description": "The associated collections that this member can access.",
+						"nullable": true
+					},
+					"groups": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"description": "Ids of the associated groups that this member will belong to",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"OkResult": {
+				"type": "object",
+				"properties": {
+					"statusCode": {
+						"type": "integer",
+						"format": "int32"
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationImportGroupRequestModel": {
+				"required": [
+					"externalId",
+					"name"
+				],
+				"type": "object",
+				"properties": {
+					"name": {
+						"maxLength": 100,
+						"minLength": 0,
+						"type": "string",
+						"description": "The name of the group.",
+						"example": "Development Team"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this group to another system, such as a user directory.",
+						"example": "external_id_123456"
+					},
+					"memberExternalIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "The associated external ids for members in this group.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationImportMemberRequestModel": {
+				"required": [
+					"externalId"
+				],
+				"type": "object",
+				"properties": {
+					"email": {
+						"maxLength": 256,
+						"minLength": 0,
+						"type": "string",
+						"description": "The member's email address. Required for non-deleted users.",
+						"format": "email",
+						"nullable": true,
+						"example": "jsmith@example.com"
+					},
+					"externalId": {
+						"maxLength": 300,
+						"minLength": 0,
+						"type": "string",
+						"description": "External identifier for reference or linking this member to another system, such as a user directory.",
+						"example": "external_id_123456"
+					},
+					"deleted": {
+						"type": "boolean",
+						"description": "Determines if this member should be removed from the organization during import."
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationImportRequestModel": {
+				"required": [
+					"overwriteExisting"
+				],
+				"type": "object",
+				"properties": {
+					"groups": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/OrganizationImportGroupRequestModel"
+						},
+						"description": "Groups to import.",
+						"nullable": true
+					},
+					"members": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/OrganizationImportMemberRequestModel"
+						},
+						"description": "Members to import.",
+						"nullable": true
+					},
+					"overwriteExisting": {
+						"type": "boolean",
+						"description": "Determines if the data in this request should overwrite or append to the existing organization data."
+					},
+					"largeImport": {
+						"type": "boolean",
+						"description": "Indicates an import of over 2000 users and/or groups is expected"
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationSubscriptionDetailsResponseModel": {
+				"type": "object",
+				"properties": {
+					"passwordManager": {
+						"$ref": "#/components/schemas/PasswordManagerSubscriptionDetails"
+					},
+					"secretsManager": {
+						"$ref": "#/components/schemas/SecretsManagerSubscriptionDetails"
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationSubscriptionUpdateRequestModel": {
+				"type": "object",
+				"properties": {
+					"passwordManager": {
+						"$ref": "#/components/schemas/PasswordManagerSubscriptionUpdateModel"
+					},
+					"secretsManager": {
+						"$ref": "#/components/schemas/SecretsManagerSubscriptionUpdateModel"
+					}
+				},
+				"additionalProperties": false
+			},
+			"OrganizationUserStatusType": {
+				"enum": [
+					0,
+					1,
+					2,
+					-1
+				],
+				"type": "integer",
+				"description": "Represents the different stages of a member's lifecycle in an organization.\nThe Bit.Core.Entities.OrganizationUser object is populated differently depending on their Status.",
+				"format": "int32",
+				"x-enum-varnames": [
+					"Invited",
+					"Accepted",
+					"Confirmed",
+					"Revoked"
+				]
+			},
+			"OrganizationUserType": {
+				"enum": [
+					0,
+					1,
+					2,
+					4
+				],
+				"type": "integer",
+				"format": "int32",
+				"x-enum-varnames": [
+					"Owner",
+					"Admin",
+					"User",
+					"Custom"
+				]
+			},
+			"PasswordManagerSubscriptionDetails": {
+				"type": "object",
+				"properties": {
+					"seats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleSeats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"storage": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"PasswordManagerSubscriptionUpdateModel": {
+				"type": "object",
+				"properties": {
+					"seats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"storage": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleSeats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"PermissionsModel": {
+				"type": "object",
+				"properties": {
+					"accessEventLogs": {
+						"type": "boolean"
+					},
+					"accessImportExport": {
+						"type": "boolean"
+					},
+					"accessReports": {
+						"type": "boolean"
+					},
+					"createNewCollections": {
+						"type": "boolean"
+					},
+					"editAnyCollection": {
+						"type": "boolean"
+					},
+					"deleteAnyCollection": {
+						"type": "boolean"
+					},
+					"manageGroups": {
+						"type": "boolean"
+					},
+					"managePolicies": {
+						"type": "boolean"
+					},
+					"manageSso": {
+						"type": "boolean"
+					},
+					"manageUsers": {
+						"type": "boolean"
+					},
+					"manageResetPassword": {
+						"type": "boolean"
+					},
+					"manageScim": {
+						"type": "boolean"
+					}
+				},
+				"additionalProperties": false,
+				"description": "Represents a member's custom permissions if the member has a Custom role."
+			},
+			"PolicyResponseModel": {
+				"required": [
+					"enabled",
+					"id",
+					"object",
+					"type"
+				],
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean",
+						"description": "Determines if this policy is enabled and enforced."
+					},
+					"data": {
+						"type": "object",
+						"additionalProperties": {
+							"nullable": true
+						},
+						"description": "Data for the policy.",
+						"nullable": true
+					},
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "policy"
+					},
+					"id": {
+						"type": "string",
+						"description": "The policy's unique identifier.",
+						"format": "uuid",
+						"example": "539a36c5-e0d2-4cf9-979e-51ecf5cf6593"
+					},
+					"type": {
+						"$ref": "#/components/schemas/PolicyType"
+					}
+				},
+				"additionalProperties": false,
+				"description": "A policy."
+			},
+			"PolicyResponseModelListResponseModel": {
+				"required": [
+					"data",
+					"object"
+				],
+				"type": "object",
+				"properties": {
+					"object": {
+						"minLength": 1,
+						"type": "string",
+						"description": "String representing the object's type. Objects of the same type share the same properties.",
+						"readOnly": true,
+						"example": "list"
+					},
+					"data": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/PolicyResponseModel"
+						},
+						"description": "An array containing the actual response elements, paginated by any request parameters."
+					}
+				},
+				"additionalProperties": false
+			},
+			"PolicyType": {
+				"enum": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					16,
+					17,
+					18,
+					19,
+					20,
+					21
+				],
+				"type": "integer",
+				"format": "int32",
+				"x-enum-varnames": [
+					"TwoFactorAuthentication",
+					"MasterPassword",
+					"PasswordGenerator",
+					"SingleOrg",
+					"RequireSso",
+					"OrganizationDataOwnership",
+					"DisableSend",
+					"SendOptions",
+					"ResetPassword",
+					"MaximumVaultTimeout",
+					"DisablePersonalVaultExport",
+					"ActivateAutofill",
+					"AutomaticAppLogIn",
+					"FreeFamiliesSponsorshipPolicy",
+					"RemoveUnlockWithPin",
+					"RestrictedItemTypesPolicy",
+					"UriMatchDefaults",
+					"AutotypeDefaultSetting",
+					"AutomaticUserConfirmation",
+					"BlockClaimedDomainAccountCreation",
+					"OrganizationUserNotification",
+					"SendControls"
+				]
+			},
+			"PolicyUpdateRequestModel": {
+				"required": [
+					"enabled"
+				],
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean",
+						"description": "Determines if this policy is enabled and enforced."
+					},
+					"data": {
+						"type": "object",
+						"additionalProperties": {
+							"nullable": true
+						},
+						"description": "Data for the policy.",
+						"nullable": true
+					},
+					"metadata": {
+						"type": "object",
+						"additionalProperties": [],
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"SecretsManagerSubscriptionDetails": {
+				"type": "object",
+				"properties": {
+					"seats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleSeats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"serviceAccounts": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleServiceAccounts": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"SecretsManagerSubscriptionUpdateModel": {
+				"type": "object",
+				"properties": {
+					"seats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleSeats": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"serviceAccounts": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					},
+					"maxAutoScaleServiceAccounts": {
+						"type": "integer",
+						"format": "int32",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"UpdateGroupIdsRequestModel": {
+				"type": "object",
+				"properties": {
+					"groupIds": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"description": "The associated group ids that this object can access.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			},
+			"UpdateMemberIdsRequestModel": {
+				"type": "object",
+				"properties": {
+					"memberIds": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"description": "The associated member ids that have access to this object.",
+						"nullable": true
+					}
+				},
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {
+			"US_server": {
+				"type": "oauth2",
+				"description": "**Use this option if you've selected the US server**",
+				"flows": {
+					"clientCredentials": {
+						"tokenUrl": "https://identity.bitwarden.com/connect/token",
+						"scopes": {
+							"api.organization": "Organization APIs (US server)"
+						}
+					}
+				}
+			},
+			"EU_server": {
+				"type": "oauth2",
+				"description": "**Use this option if you've selected the EU server**",
+				"flows": {
+					"clientCredentials": {
+						"tokenUrl": "https://identity.bitwarden.eu/connect/token",
+						"scopes": {
+							"api.organization": "Organization APIs (EU server)"
+						}
+					}
+				}
+			}
+		}
+	},
+	"security": [
+		{
+			"US_server": [
+				"api.organization"
+			]
+		},
+		{
+			"EU_server": [
+				"api.organization"
+			]
+		}
+	],
+	"tags": [
+		{
+			"name": "Collections"
+		},
+		{
+			"name": "Events"
+		},
+		{
+			"name": "Groups"
+		},
+		{
+			"name": "Members"
+		},
+		{
+			"name": "Organization"
+		},
+		{
+			"name": "Policies"
+		}
+	],
+	"x-git-commit": "0a15a68c63b3df334065f071e8929ad409c93229"
+}
