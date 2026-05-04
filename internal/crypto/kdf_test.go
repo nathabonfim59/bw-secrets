@@ -60,3 +60,46 @@ func TestMakeMasterKeySaltLowercase(t *testing.T) {
 		}
 	}
 }
+
+func TestStretchKey(t *testing.T) {
+	masterKey := make([]byte, 32)
+	for i := range masterKey {
+		masterKey[i] = byte(i + 1)
+	}
+	stretched := StretchKey(masterKey)
+	if len(stretched) != 64 {
+		t.Fatalf("stretched key length = %d, want 64", len(stretched))
+	}
+	enc := stretched[0:32]
+	mac := stretched[32:64]
+	if string(enc) == string(mac) {
+		t.Error("enc and mac halves should differ")
+	}
+	for _, b := range enc {
+		if b != 0 {
+			return // found non-zero byte, valid
+		}
+	}
+	t.Error("enc key half is all zeros")
+}
+
+func TestStretchKeyRoundtrip(t *testing.T) {
+	masterKey := make([]byte, 32)
+	for i := range masterKey {
+		masterKey[i] = byte((i + 1) * 17 % 256)
+	}
+
+	plaintext := []byte("secret data to encrypt")
+	encKey := StretchKey(masterKey)
+
+	encStr := encryptTestString(string(plaintext), encKey[0:32], encKey[32:64])
+
+	es, _ := ParseEncString(encStr)
+	decrypted, err := es.DecryptWithKey(encKey)
+	if err != nil {
+		t.Fatal("decrypt:", err)
+	}
+	if string(decrypted) != string(plaintext) {
+		t.Errorf("got %q, want %q", decrypted, plaintext)
+	}
+}

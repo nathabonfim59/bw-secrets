@@ -51,13 +51,20 @@ func (c *Client) do(ctx context.Context, method, path string, body io.Reader, re
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		if tfe := detectTwoFactor(bodyBytes); tfe != nil {
+			return tfe
+		}
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	if result != nil {
-		return json.NewDecoder(resp.Body).Decode(result)
+		return json.Unmarshal(bodyBytes, result)
 	}
 	return nil
 }
@@ -81,12 +88,29 @@ func (c *Client) postJSON(ctx context.Context, path string, body interface{}, re
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response: %w", err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		if tfe := detectTwoFactor(bodyBytes); tfe != nil {
+			return tfe
+		}
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 	if result != nil {
-		return json.NewDecoder(resp.Body).Decode(result)
+		return json.Unmarshal(bodyBytes, result)
+	}
+	return nil
+}
+
+func detectTwoFactor(body []byte) *TwoFactorError {
+	var tfe TwoFactorError
+	if json.Unmarshal(body, &tfe) == nil && len(tfe.Providers) > 0 {
+		tfe.Raw = string(body)
+		return &tfe
 	}
 	return nil
 }

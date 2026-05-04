@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -66,14 +67,37 @@ in the OS keyring for subsequent commands.`,
 		deviceID := newUUID()
 		tokenResp, err := client.Login(context.Background(), email, passwordHash, deviceID)
 		if err != nil {
-			return fmt.Errorf("login: %w", err)
+			var twoFactor *api.TwoFactorError
+			if errors.As(err, &twoFactor) {
+				fmt.Fprint(os.Stderr, "TOTP code: ")
+				totpBytes, terr := term.ReadPassword(int(os.Stdin.Fd()))
+				fmt.Fprintln(os.Stderr)
+				if terr != nil {
+					return fmt.Errorf("reading TOTP code: %w", terr)
+				}
+				totp := strings.TrimSpace(string(totpBytes))
+				if totp == "" {
+					return fmt.Errorf("TOTP code is required")
+				}
+				provider := "0"
+				if len(twoFactor.Providers) > 0 {
+					provider = twoFactor.Providers[0]
+				}
+				fmt.Fprintln(os.Stderr, "Verifying...")
+				tokenResp, err = client.LoginWithTwoFactor(context.Background(), email, passwordHash, provider, totp, deviceID)
+				if err != nil {
+					return fmt.Errorf("login with 2FA: %w", err)
+				}
+			} else {
+				return fmt.Errorf("login: %w", err)
+			}
 		}
 
 		if tokenResp.Key == "" {
 			return fmt.Errorf("server returned no encryption key")
 		}
 
-		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, masterKey)
+		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, crypto.StretchKey(masterKey))
 		if err != nil {
 			return fmt.Errorf("decrypting symmetric key: %w", err)
 		}
