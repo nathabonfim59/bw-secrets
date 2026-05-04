@@ -2,6 +2,7 @@ package vault
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/nathabonfim59/bw-secrets/internal/api"
@@ -23,10 +24,24 @@ func ParseURI(uri string) (*SecretURI, error) {
 	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
 		return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 	}
+
+	vaultName, err := url.PathUnescape(parts[0])
+	if err != nil {
+		return nil, fmt.Errorf("%w: invalid vault name: %s", ErrInvalidURI, err)
+	}
+	itemName, err := url.PathUnescape(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("%w: invalid item name: %s", ErrInvalidURI, err)
+	}
+	fieldName, err := url.PathUnescape(parts[2])
+	if err != nil {
+		return nil, fmt.Errorf("%w: invalid field name: %s", ErrInvalidURI, err)
+	}
+
 	return &SecretURI{
-		VaultName: parts[0],
-		ItemName:  parts[1],
-		FieldName: parts[2],
+		VaultName: vaultName,
+		ItemName:  itemName,
+		FieldName: fieldName,
 	}, nil
 }
 
