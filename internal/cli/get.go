@@ -37,7 +37,7 @@ By default, only metadata is shown. Use --reveal to output the actual value.`,
 			return fmt.Errorf("syncing vault: %w", err)
 		}
 
-		v := vault.New(syncResp, symKey)
+		v := vault.New(syncResp, symKey, creds.Scope)
 
 		uri, err := vault.ParseURI(args[0])
 		if err != nil {

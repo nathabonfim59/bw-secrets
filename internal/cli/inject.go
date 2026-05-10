@@ -46,7 +46,7 @@ current environment, enabling multi-environment config templates:
 		if err != nil {
 			return fmt.Errorf("syncing vault: %w", err)
 		}
-		v := vault.New(syncResp, symKey)
+		v := vault.New(syncResp, symKey, creds.Scope)
 
 		var input []byte
 		source := injectInFile

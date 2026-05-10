@@ -86,6 +86,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 			AccessToken:  tokenResp.AccessToken,
 			RefreshToken: tokenResp.RefreshToken,
 			EncKey:       base64.StdEncoding.EncodeToString(rawKey),
+			Scope:        creds.Scope,
 		}
 		if err := keyring.Save(newCreds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)

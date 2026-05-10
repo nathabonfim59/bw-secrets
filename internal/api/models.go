@@ -30,19 +30,33 @@ func (e *TwoFactorError) Error() string {
 }
 
 type SyncResponse struct {
-	Profile Profile  `json:"Profile"`
-	Folders []Folder `json:"Folders"`
-	Ciphers []Cipher `json:"Ciphers"`
-	Sends   []Send   `json:"Sends"`
+	Profile     Profile      `json:"Profile"`
+	Folders     []Folder     `json:"Folders"`
+	Collections []Collection `json:"Collections"`
+	Ciphers     []Cipher     `json:"Ciphers"`
+	Sends       []Send       `json:"Sends"`
 }
 
 type Profile struct {
-	ID            string `json:"Id"`
-	Name          string `json:"Name"`
-	Email         string `json:"Email"`
-	Key           string `json:"Key"`
-	PrivateKey    string `json:"PrivateKey"`
-	SecurityStamp string `json:"SecurityStamp"`
+	ID            string         `json:"Id"`
+	Name          string         `json:"Name"`
+	Email         string         `json:"Email"`
+	Key           string         `json:"Key"`
+	PrivateKey    string         `json:"PrivateKey"`
+	SecurityStamp string         `json:"SecurityStamp"`
+	Organizations []Organization `json:"Organizations"`
+}
+
+type Organization struct {
+	ID   string `json:"Id"`
+	Name string `json:"Name"`
+}
+
+type Collection struct {
+	ID             string `json:"Id"`
+	OrganizationID string `json:"OrganizationId"`
+	Name           string `json:"Name"`
+	ExternalID     string `json:"ExternalId"`
 }
 
 type Cipher struct {

@@ -28,6 +28,15 @@ make build          # → bin/bw-secrets
 # Login (server URL, email, master password, TOTP if 2FA enabled)
 bw-secrets login
 
+# Scope to a specific personal folder
+bw-secrets login --folder Work
+
+# Scope to an organization collection
+bw-secrets login --organization Acme --collection Engineering
+
+# List available organizations
+bw-secrets orgs
+
 # Or skip the URL prompt
 bw-secrets --server https://bitwarden.example.com login
 
@@ -101,14 +110,25 @@ URL=http://${DB_HOST}:8080   # variable expansion
 ## URI format
 
 ```
-bw://VaultName/ItemName/FieldName
+bw://VaultName/ItemName/FieldName        (personal folders)
+bw://OrgName//CollectionName/ItemName/FieldName  (organization collections)
 ```
+
+The `//` separates organization name from collection name — no ambiguity with folders.
 
 | Component | Meaning | Example |
 |---|---|---|
 | VaultName | Folder name in Bitwarden, or `No Folder` | `Personal`, `No Folder` |
+| OrgName | Organization name | `Acme` |
+| CollectionName | Collection within the organization | `Engineering` |
 | ItemName | Name of the vault item (case-insensitive) | `Google`, `My Server` |
 | FieldName | Field to retrieve | `password`, `username`, `notes`, `totp`, `number`, custom field name |
+
+Examples:
+```
+bw://Work/Google/password              → personal folder "Work"
+bw://Acme//Engineering/DB/password     → org "Acme", collection "Engineering"
+```
 
 Fields by item type:
 
@@ -123,11 +143,12 @@ Fields by item type:
 
 | Command | Description |
 |---|---|
-| `login` | Authenticate and store credentials |
+| `login` | Authenticate and store credentials; use `--folder` or `--organization`/`--collection` to scope |
 | `unlock` | Re-authenticate when tokens expire |
 | `lock` | Clear stored credentials |
 | `logout` | Same as `lock` |
-| `status` | Show login status and token expiry |
+| `status` | Show login status, token expiry, and active scope |
+| `orgs` | List available organizations |
 | `get` | Resolve a `bw://` URI (`op read` equivalent) |
 | `list` | List vault items |
 | `run` | Inject secrets as env vars and run a command (`op run` equivalent) |

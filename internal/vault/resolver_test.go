@@ -12,6 +12,7 @@ import (
 
 	"github.com/nathabonfim59/bw-secrets/internal/api"
 	"github.com/nathabonfim59/bw-secrets/internal/crypto"
+	"github.com/nathabonfim59/bw-secrets/internal/keyring"
 )
 
 func TestParseURI(t *testing.T) {
@@ -69,7 +70,7 @@ func TestVaultNew(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 	items := v.Items()
 	if len(items) != 1 {
 		t.Fatalf("got %d items, want 1 (deleted should be filtered)", len(items))
@@ -101,7 +102,7 @@ func TestResolveLoginPassword(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://Personal/Google/password")
 	val, vault, item, err := v.ResolveValue(uri, symKey)
@@ -134,7 +135,7 @@ func TestResolveLoginUsername(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/username")
 	val, _, _, err := v.ResolveValue(uri, symKey)
@@ -158,7 +159,7 @@ func TestResolveSecureNote(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/My Note/notes")
 	val, _, _, err := v.ResolveValue(uri, symKey)
@@ -186,7 +187,7 @@ func TestResolveCard(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Visa/number")
 	val, _, _, err := v.ResolveValue(uri, symKey)
@@ -213,7 +214,7 @@ func TestResolveIdentity(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Me/firstname")
 	val, _, _, err := v.ResolveValue(uri, symKey)
@@ -239,7 +240,7 @@ func TestResolveItemNotFound(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://Personal/Facebook/password")
 	_, _, _, err := v.ResolveValue(uri, symKey)
@@ -265,7 +266,7 @@ func TestResolveFieldNotFound(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/nonexistent")
 	_, _, _, err := v.ResolveValue(uri, symKey)
@@ -303,7 +304,7 @@ func TestResolveMultipleItems(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/password")
 	_, _, _, err := v.ResolveValue(uri, symKey)
@@ -337,7 +338,7 @@ func TestResolveCustomField(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey)
+	v := New(syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Server/api key")
 	val, _, _, err := v.ResolveValue(uri, symKey)
@@ -346,6 +347,179 @@ func TestResolveCustomField(t *testing.T) {
 	}
 	if val != "sk-12345" {
 		t.Errorf("value = %q, want sk-12345", val)
+	}
+}
+
+func TestParseURIOrg(t *testing.T) {
+	uri, err := ParseURI("bw://Acme//Engineering/Database/password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if uri.OrgName != "Acme" {
+		t.Errorf("OrgName = %q, want Acme", uri.OrgName)
+	}
+	if uri.CollectionName != "Engineering" {
+		t.Errorf("CollectionName = %q, want Engineering", uri.CollectionName)
+	}
+	if uri.ItemName != "Database" {
+		t.Errorf("ItemName = %q, want Database", uri.ItemName)
+	}
+	if uri.FieldName != "password" {
+		t.Errorf("FieldName = %q, want password", uri.FieldName)
+	}
+	if uri.VaultName != "" {
+		t.Errorf("VaultName = %q, want empty", uri.VaultName)
+	}
+}
+
+func TestParseURIOrgInvalid(t *testing.T) {
+	cases := []string{
+		"bw:////x/y",
+		"bw://Org//",
+		"bw://Org//Coll",
+		"bw://Org//Coll/",
+	}
+	for _, c := range cases {
+		_, err := ParseURI(c)
+		if err == nil {
+			t.Errorf("expected error for %q", c)
+		}
+	}
+}
+
+func TestResolveOrgItem(t *testing.T) {
+	symKey := testKey()
+	syncResp := &api.SyncResponse{
+		Profile: api.Profile{
+			Organizations: []api.Organization{
+				{ID: "org-1", Name: "Acme"},
+			},
+		},
+		Collections: []api.Collection{
+			{ID: "coll-1", OrganizationID: "org-1", Name: encryptForTest("Engineering", symKey)},
+		},
+		Ciphers: []api.Cipher{
+			{
+				ID:            "item-1",
+				Name:          encryptForTest("Database", symKey),
+				Type:          1,
+				CollectionIDs: []string{"coll-1"},
+				Login: &api.Login{
+					Password: encryptForTest("db-secret", symKey),
+				},
+			},
+		},
+	}
+	v := New(syncResp, symKey, nil)
+
+	uri, _ := ParseURI("bw://Acme//Engineering/Database/password")
+	val, vault, item, err := v.ResolveValue(uri, symKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if val != "db-secret" {
+		t.Errorf("value = %q, want db-secret", val)
+	}
+	if vault != "Acme//Engineering" {
+		t.Errorf("vault = %q, want Acme//Engineering", vault)
+	}
+	if item != "Database" {
+		t.Errorf("item = %q, want Database", item)
+	}
+}
+
+func TestVaultNewWithFolderScope(t *testing.T) {
+	symKey := testKey()
+	syncResp := &api.SyncResponse{
+		Folders: []api.Folder{
+			{ID: "folder-1", Name: encryptForTest("Work", symKey)},
+			{ID: "folder-2", Name: encryptForTest("Personal", symKey)},
+		},
+		Ciphers: []api.Cipher{
+			{
+				ID:       "item-1",
+				Name:     encryptForTest("Google", symKey),
+				Type:     1,
+				FolderID: strPtr("folder-1"),
+			},
+			{
+				ID:       "item-2",
+				Name:     encryptForTest("Facebook", symKey),
+				Type:     1,
+				FolderID: strPtr("folder-2"),
+			},
+		},
+	}
+	scope := &keyring.Scope{Type: "folder", ID: "folder-1", Name: "Work"}
+	v := New(syncResp, symKey, scope)
+
+	items := v.Items()
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Name != "Google" {
+		t.Errorf("Name = %q, want Google", items[0].Name)
+	}
+}
+
+func TestVaultNewWithCollectionScope(t *testing.T) {
+	symKey := testKey()
+	syncResp := &api.SyncResponse{
+		Profile: api.Profile{
+			Organizations: []api.Organization{
+				{ID: "org-1", Name: "Acme"},
+			},
+		},
+		Collections: []api.Collection{
+			{ID: "coll-1", OrganizationID: "org-1", Name: encryptForTest("Engineering", symKey)},
+			{ID: "coll-2", OrganizationID: "org-1", Name: encryptForTest("Marketing", symKey)},
+		},
+		Ciphers: []api.Cipher{
+			{
+				ID:            "item-1",
+				Name:          encryptForTest("DB", symKey),
+				Type:          1,
+				CollectionIDs: []string{"coll-1"},
+			},
+			{
+				ID:            "item-2",
+				Name:          encryptForTest("Website", symKey),
+				Type:          1,
+				CollectionIDs: []string{"coll-2"},
+			},
+		},
+	}
+	scope := &keyring.Scope{Type: "collection", ID: "coll-1", Name: "Engineering"}
+	v := New(syncResp, symKey, scope)
+
+	items := v.Items()
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].Name != "DB" {
+		t.Errorf("Name = %q, want DB", items[0].Name)
+	}
+}
+
+func TestVaultNewNoScope(t *testing.T) {
+	symKey := testKey()
+	syncResp := &api.SyncResponse{
+		Ciphers: []api.Cipher{
+			{
+				ID:   "item-1",
+				Name: encryptForTest("A", symKey),
+				Type: 1,
+			},
+			{
+				ID:   "item-2",
+				Name: encryptForTest("B", symKey),
+				Type: 1,
+			},
+		},
+	}
+	v := New(syncResp, symKey, nil)
+	if len(v.Items()) != 2 {
+		t.Errorf("got %d items, want 2 (nil scope = all)", len(v.Items()))
 	}
 }
 
