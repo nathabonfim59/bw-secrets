@@ -16,12 +16,19 @@ const (
 
 var ErrNotLoggedIn = errors.New("not logged in — run 'bw-secrets login'")
 
+type Scope struct {
+	Type string `json:"type"` // "folder" or "collection"
+	ID   string `json:"id"`   // folder UUID or collection UUID
+	Name string `json:"name"` // human-readable name
+}
+
 type Credentials struct {
 	ServerURL    string `json:"server_url"`
 	Email        string `json:"email"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	EncKey       string `json:"enc_key"`
+	Scope        *Scope `json:"scope,omitempty"`
 }
 
 func Save(creds *Credentials) error {

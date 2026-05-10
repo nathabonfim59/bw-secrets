@@ -47,7 +47,7 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("syncing vault: %w", err)
 		}
-		v := vault.New(syncResp, symKey)
+		v := vault.New(syncResp, symKey, creds.Scope)
 
 		combinedEnv := make(map[string]string)
 		for _, kv := range os.Environ() {

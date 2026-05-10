@@ -10,9 +10,11 @@ import (
 )
 
 type SecretURI struct {
-	VaultName string
-	ItemName  string
-	FieldName string
+	VaultName      string
+	OrgName        string
+	CollectionName string
+	ItemName       string
+	FieldName      string
 }
 
 func ParseURI(uri string) (*SecretURI, error) {
@@ -20,35 +22,80 @@ func ParseURI(uri string) (*SecretURI, error) {
 		return nil, fmt.Errorf("%w: missing bw:// prefix", ErrInvalidURI)
 	}
 	rest := strings.TrimPrefix(uri, "bw://")
-	parts := strings.SplitN(rest, "/", 3)
-	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+	if rest == "" {
 		return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 	}
 
-	vaultName, err := url.PathUnescape(parts[0])
-	if err != nil {
-		return nil, fmt.Errorf("%w: invalid vault name: %s", ErrInvalidURI, err)
+	su := &SecretURI{}
+
+	if idx := strings.Index(rest, "//"); idx >= 0 {
+		orgPart := rest[:idx]
+		rest2 := rest[idx+2:]
+		if orgPart == "" || rest2 == "" {
+			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
+		}
+		parts := strings.SplitN(rest2, "/", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
+		}
+		var err error
+		su.OrgName, err = url.PathUnescape(orgPart)
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid organization name: %s", ErrInvalidURI, err)
+		}
+		su.CollectionName, err = url.PathUnescape(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid collection name: %s", ErrInvalidURI, err)
+		}
+		rest = parts[1]
+	} else {
+		parts := strings.SplitN(rest, "/", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
+		}
+		var err error
+		su.VaultName, err = url.PathUnescape(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid vault name: %s", ErrInvalidURI, err)
+		}
+		rest = parts[1]
 	}
-	itemName, err := url.PathUnescape(parts[1])
+
+	parts := strings.SplitN(rest, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
+	}
+
+	var err error
+	su.ItemName, err = url.PathUnescape(parts[0])
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid item name: %s", ErrInvalidURI, err)
 	}
-	fieldName, err := url.PathUnescape(parts[2])
+	su.FieldName, err = url.PathUnescape(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid field name: %s", ErrInvalidURI, err)
 	}
 
-	return &SecretURI{
-		VaultName: vaultName,
-		ItemName:  itemName,
-		FieldName: fieldName,
-	}, nil
+	return su, nil
 }
 
 func (v *Vault) ResolveValue(uri *SecretURI, symKey *crypto.SymmetricKey) (string, string, string, error) {
-	dc, err := v.FindByName(uri.ItemName, uri.VaultName)
-	if err != nil {
-		return "", "", "", err
+	var dc *decryptedCipher
+	var err error
+	vaultDisplay := ""
+
+	if uri.OrgName != "" {
+		dc, err = v.FindByOrgCollection(uri.OrgName, uri.CollectionName, uri.ItemName)
+		if err != nil {
+			return "", "", "", err
+		}
+		vaultDisplay = uri.OrgName + "//" + uri.CollectionName
+	} else {
+		dc, err = v.FindByName(uri.ItemName, uri.VaultName)
+		if err != nil {
+			return "", "", "", err
+		}
+		vaultDisplay = dc.VaultName
 	}
 
 	fieldName := strings.ToLower(uri.FieldName)
@@ -68,7 +115,7 @@ func (v *Vault) ResolveValue(uri *SecretURI, symKey *crypto.SymmetricKey) (strin
 	if err != nil {
 		return "", "", "", fmt.Errorf("decrypting field: %w", err)
 	}
-	return value, dc.VaultName, dc.Name, nil
+	return value, vaultDisplay, dc.Name, nil
 }
 
 func extractFieldEncValue(c api.Cipher, fieldName string, symKey *crypto.SymmetricKey) string {

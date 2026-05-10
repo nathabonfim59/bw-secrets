@@ -20,13 +20,32 @@ func init() {
 	rootCmd.AddCommand(loginCmd)
 }
 
+var (
+	loginFolder       string
+	loginOrganization string
+	loginCollection   string
+)
+
 var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with Bitwarden and store credentials in the OS keyring.",
 	Long: `Prompts for server URL, email, and master password, then authenticates
 with the Bitwarden/Vaultwarden server and stores the resulting tokens
-in the OS keyring for subsequent commands.`,
+in the OS keyring for subsequent commands.
+
+Use --folder to restrict the session to a single personal folder, or
+--organization together with --collection to restrict to a collection.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if loginFolder != "" && loginCollection != "" {
+			return fmt.Errorf("--folder and --collection are mutually exclusive")
+		}
+		if loginCollection != "" && loginOrganization == "" {
+			return fmt.Errorf("--organization is required when using --collection")
+		}
+		if loginOrganization != "" && loginCollection == "" {
+			return fmt.Errorf("--collection is required when using --organization")
+		}
+
 		reader := os.Stdin
 
 		serverURL := serverURL()
@@ -117,6 +136,34 @@ in the OS keyring for subsequent commands.`,
 			RefreshToken: tokenResp.RefreshToken,
 			EncKey:       base64.StdEncoding.EncodeToString(rawKey),
 		}
+
+		if loginFolder != "" || loginCollection != "" {
+			client.SetAccessToken(tokenResp.AccessToken)
+			syncResp, err := client.Sync(context.Background())
+			if err != nil {
+				return fmt.Errorf("syncing vault for scope lookup: %w", err)
+			}
+
+			var scope *keyring.Scope
+
+			if loginFolder != "" {
+				scope, err = resolveFolderScope(syncResp, loginFolder, symKey)
+				if err != nil {
+					return err
+				}
+			}
+
+			if loginCollection != "" {
+				scope, err = resolveCollectionScope(syncResp, loginOrganization, loginCollection, symKey)
+				if err != nil {
+					return err
+				}
+			}
+
+			creds.Scope = scope
+			fmt.Fprintf(os.Stderr, "Scoped to %s: %s\n", scope.Type, scope.Name)
+		}
+
 		if err := keyring.Save(creds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)
 		}
@@ -124,6 +171,59 @@ in the OS keyring for subsequent commands.`,
 		fmt.Fprintf(os.Stderr, "Logged in as %s on %s\n", email, serverURL)
 		return nil
 	},
+}
+
+func resolveFolderScope(syncResp *api.SyncResponse, folderName string, symKey *crypto.SymmetricKey) (*keyring.Scope, error) {
+	lower := strings.ToLower(folderName)
+	for _, f := range syncResp.Folders {
+		name := f.Name
+		if decrypted, err := crypto.ParseEncString(f.Name); err == nil {
+			if val, derr := decrypted.Decrypt(symKey); derr == nil {
+				name = val
+			}
+		}
+		if strings.ToLower(name) == lower {
+			return &keyring.Scope{Type: "folder", ID: f.ID, Name: name}, nil
+		}
+	}
+	return nil, fmt.Errorf("folder %q not found", folderName)
+}
+
+func resolveCollectionScope(syncResp *api.SyncResponse, orgName, collectionName string, symKey *crypto.SymmetricKey) (*keyring.Scope, error) {
+	lowerOrg := strings.ToLower(orgName)
+	orgID := ""
+	for _, org := range syncResp.Profile.Organizations {
+		if strings.ToLower(org.Name) == lowerOrg {
+			orgID = org.ID
+			break
+		}
+	}
+	if orgID == "" {
+		return nil, fmt.Errorf("organization %q not found", orgName)
+	}
+
+	lowerColl := strings.ToLower(collectionName)
+	for _, col := range syncResp.Collections {
+		if col.OrganizationID != orgID {
+			continue
+		}
+		name := col.Name
+		if decrypted, err := crypto.ParseEncString(col.Name); err == nil {
+			if val, derr := decrypted.Decrypt(symKey); derr == nil {
+				name = val
+			}
+		}
+		if strings.ToLower(name) == lowerColl {
+			return &keyring.Scope{Type: "collection", ID: col.ID, Name: name}, nil
+		}
+	}
+	return nil, fmt.Errorf("collection %q not found in organization %q", collectionName, orgName)
+}
+
+func init() {
+	loginCmd.Flags().StringVar(&loginFolder, "folder", "", "Restrict session to this folder")
+	loginCmd.Flags().StringVar(&loginOrganization, "organization", "", "Organization (required with --collection)")
+	loginCmd.Flags().StringVar(&loginCollection, "collection", "", "Restrict session to this collection (requires --organization)")
 }
 
 func prompt(reader *os.File, label, defaultVal string) (string, error) {

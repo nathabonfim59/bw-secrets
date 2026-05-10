@@ -36,7 +36,7 @@ var listCmd = &cobra.Command{
 			return fmt.Errorf("syncing vault: %w", err)
 		}
 
-		v := vault.New(syncResp, symKey)
+		v := vault.New(syncResp, symKey, creds.Scope)
 
 		vaultName := ""
 		if len(args) > 0 {

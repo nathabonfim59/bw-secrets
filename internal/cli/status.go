@@ -33,6 +33,9 @@ var statusCmd = &cobra.Command{
 			fmt.Fprint(os.Stderr, ". Token expired — run 'bw-secrets login' to re-authenticate")
 		}
 		fmt.Fprintln(os.Stderr)
+		if creds.Scope != nil {
+			fmt.Fprintf(os.Stderr, "Scoped to %s: %s\n", creds.Scope.Type, creds.Scope.Name)
+		}
 		return nil
 	},
 }
