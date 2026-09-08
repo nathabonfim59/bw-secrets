@@ -24,11 +24,9 @@ var unlockCmd = &cobra.Command{
 	Long: `Loads stored server URL and email from the keyring, prompts for the
 master password, and re-authenticates to obtain fresh tokens.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		creds, err := keyring.Load()
+		creds, err := keyring.LoadProfile(activeProfile.Name)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not logged in — run 'bw-secrets login'")
-			os.Exit(2)
-			return nil
+			return err
 		}
 
 		fmt.Fprint(os.Stderr, "Master password: ")
@@ -88,7 +86,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 			EncKey:       base64.StdEncoding.EncodeToString(rawKey),
 			Scope:        creds.Scope,
 		}
-		if err := keyring.Save(newCreds); err != nil {
+		if err := keyring.SaveProfile(activeProfile.Name, newCreds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)
 		}
 

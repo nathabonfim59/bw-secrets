@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/nathabonfim59/bw-secrets/internal/profile"
 	"github.com/nathabonfim59/bw-secrets/internal/vault"
 	"github.com/spf13/cobra"
 )
@@ -65,6 +66,8 @@ Examples:
 				combinedEnv[k] = v
 			}
 		}
+		// Propagate the resolved context, including directory and flag overrides.
+		combinedEnv[profile.Env] = activeProfile.Name
 
 		var secrets []string
 

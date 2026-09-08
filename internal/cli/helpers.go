@@ -15,11 +15,9 @@ import (
 )
 
 func getClient() (*api.Client, *keyring.Credentials, error) {
-	creds, err := keyring.Load()
+	creds, err := keyring.LoadProfile(activeProfile.Name)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Not logged in — run 'bw-secrets login'")
-		os.Exit(2)
-		return nil, nil, nil
+		return nil, nil, err
 	}
 
 	url := serverURL()
@@ -38,7 +36,7 @@ func getClient() (*api.Client, *keyring.Credentials, error) {
 		}
 		creds.AccessToken = tokenResp.AccessToken
 		creds.RefreshToken = tokenResp.RefreshToken
-		if err := keyring.Save(creds); err != nil {
+		if err := keyring.SaveProfile(activeProfile.Name, creds); err != nil {
 			return nil, nil, fmt.Errorf("saving refreshed tokens: %w", err)
 		}
 	}

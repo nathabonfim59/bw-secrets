@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nathabonfim59/bw-secrets/internal/profile"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,8 @@ import (
 var version = "dev"
 
 var serverFlag string
+var profileFlag string
+var activeProfile profile.Selection
 
 var rootCmd = &cobra.Command{
 	Use:     "bw-secrets",
@@ -24,10 +27,16 @@ like bw://VaultName/ItemName/FieldName.
 First run 'bw-secrets login' to authenticate, then use subcommands.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		var err error
+		activeProfile, err = profile.Resolve(profileFlag, os.Getenv(profile.Env), ".")
+		return err
+	},
 }
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&serverFlag, "server", "s", "", "Bitwarden server URL (also settable via BW_SECRETS_SERVER)")
+	rootCmd.PersistentFlags().StringVar(&profileFlag, "profile", "", "Login profile (overrides directory bindings and BW_SECRETS_PROFILE)")
 }
 
 func serverURL() string {

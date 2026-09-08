@@ -164,7 +164,7 @@ Use --folder to restrict the session to a single personal folder, or
 			fmt.Fprintf(os.Stderr, "Scoped to %s: %s\n", scope.Type, scope.Name)
 		}
 
-		if err := keyring.Save(creds); err != nil {
+		if err := keyring.SaveProfile(activeProfile.Name, creds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)
 		}
 

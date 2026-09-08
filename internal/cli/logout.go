@@ -15,9 +15,9 @@ func init() {
 var logoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Clear stored credentials (same as lock).",
-	Long:  "Removes all stored auth tokens and keys from the keyring.",
+	Long:  "Removes stored auth tokens and keys for the selected profile.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := keyring.Delete(); err != nil {
+		if err := keyring.DeleteProfile(activeProfile.Name); err != nil {
 			return fmt.Errorf("clearing keyring: %w", err)
 		}
 		fmt.Fprintln(os.Stderr, "Logged out")

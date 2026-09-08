@@ -83,6 +83,106 @@ bw-secrets get --reveal bw://Personal/Google/password
 DB_PASS=$(bw-secrets get --reveal bw://Production/MySQL/password)
 ```
 
+## Login profiles and directory scopes
+
+Keep multiple logins without re-authenticating whenever you switch projects:
+
+```bash
+bw-secrets login --profile personal
+bw-secrets login --profile work --organization Acme --collection Engineering
+```
+
+Each profile has independent credentials, server settings, and an optional
+folder/collection scope. Existing logins are available as the `default` profile;
+no migration is needed. Tokens refresh automatically while the session remains
+refreshable. Use `unlock --profile work` when re-authentication is required.
+
+### Export a shell default
+
+In bash, zsh, or another POSIX-compatible shell:
+
+```bash
+eval "$(bw-secrets profile use work)"
+# Equivalent to: export BW_SECRETS_PROFILE=work
+
+bw-secrets profile current  # work
+bash                       # subshell inherits work
+```
+
+`profile use` prints only an export statement; it does not log in or modify your
+parent shell by itself. With no name, it exports the currently effective profile:
+
+```bash
+eval "$(bw-secrets profile use)"
+```
+
+For other shells, set the environment variable directly:
+
+```fish
+set -gx BW_SECRETS_PROFILE work
+```
+
+```powershell
+$env:BW_SECRETS_PROFILE = 'work'
+```
+
+### Bind a directory recursively
+
+```bash
+bw-secrets profile bind work ~/projects/customer-a
+bw-secrets profile bind personal ~/projects/my-app
+
+cd ~/projects/customer-a/backend
+bw-secrets profile current  # work, including all subdirectories
+bw-secrets status           # profile, selection source, binding path, login and vault scope
+```
+
+Bindings are stored locally in `profiles.json` in the OS user configuration
+directory (`~/.config/bw-secrets/` on Linux, or under `XDG_CONFIG_HOME`). No YAML
+or credential files are added to your project. Directory paths are absolute and
+symlinks are resolved. If you move a project, bind its new location.
+
+The effective profile is selected in this order:
+
+1. Explicit `--profile NAME`.
+2. The nearest directory binding, searching from the working directory upward.
+3. Inherited `BW_SECRETS_PROFILE`.
+4. `default`.
+
+A nested directory binding overrides a parent binding. Bindings apply to `login`,
+`unlock`, `lock`, `logout`, `status`, and all vault commands. A selected profile
+without credentials fails rather than falling back to another login. Malformed
+bindings also produce an error instead of silently selecting a default.
+
+**Directory selection does not change your shell's exported default.** If `work`
+is exported, commands in a directory bound to `personal` use `personal`; outside
+that directory they use `work` again. An ordinary subshell inherits the exported
+value, while each invocation of bw-secrets still checks its own working directory.
+
+`bw-secrets run` passes its **effective** profile to the child process as
+`BW_SECRETS_PROFILE`, including when selected by a binding or `--profile`. This
+value takes precedence over any assignment in an `--env-file`. Further bw-secrets
+invocations in that child still follow the same selection order.
+
+```bash
+bw-secrets profile bind work       # bind the current directory
+bw-secrets profile unbind          # remove only this directory's binding
+bw-secrets profile unbind ~/projects/my-app
+unset BW_SECRETS_PROFILE           # remove the shell default (POSIX shells)
+bw-secrets logout --profile work   # remove only work's credentials
+```
+
+Removing a binding exposes the nearest parent binding, then the environment or
+default profile. Logging out keeps directory bindings in place. Profile names
+are 1–64 ASCII letters, digits, underscores, or hyphens and must start with a
+letter or digit. `profile bind` and `profile use NAME` can select a profile before
+you log in to it.
+
+Directory bindings select a login and its saved folder/collection scope. They are
+a CLI convenience, not an operating-system sandbox or server-side access policy.
+For service-account-style access restrictions, use an identity with appropriately
+limited server-side permissions.
+
 ## Inject secrets into files
 
 Use `bw-secrets inject` to replace `bw://` references in config files — safe to check into git:
@@ -170,9 +270,13 @@ Fields by item type:
 |---|---|
 | `login` | Authenticate and store credentials; use `--folder` or `--organization`/`--collection` to scope |
 | `unlock` | Re-authenticate when tokens expire |
-| `lock` | Clear stored credentials |
+| `lock` | Clear the selected profile's stored credentials |
 | `logout` | Same as `lock` |
 | `status` | Show login status, token expiry, and active scope |
+| `profile current` | Print the effective profile for the current directory |
+| `profile use [name]` | Print a POSIX shell export for a named or effective profile |
+| `profile bind <name> [directory]` | Bind a profile recursively; defaults to the current directory |
+| `profile unbind [directory]` | Remove a directory's explicit binding |
 | `orgs` | List available organizations |
 | `get` | Resolve a `bw://` URI (`op read` equivalent) |
 | `list` | List vault items |
@@ -184,11 +288,12 @@ Fields by item type:
 | Variable | Purpose |
 |---|---|
 | `BW_SECRETS_SERVER` | Default server URL (overridden by `--server`) |
+| `BW_SECRETS_PROFILE` | Inherited profile; overridden by a directory binding or `--profile` |
 
 ## Security
 
 - Master password is **never** stored
-- Credentials are stored in the OS keyring (or `~/.config/bw-secrets/credentials.json` with `0600` permissions)
+- Credentials are stored independently per profile in the OS keyring. File fallback uses `0600` permissions: `~/.config/bw-secrets/credentials.json` for `default`, or `~/.config/bw-secrets/profiles/<name>/credentials.json` for named profiles on Linux.
 - `bw-secrets get` requires `--reveal` to output the actual value
 - `bw-secrets run` masks secrets in subprocess output by default
 - All server communication is over HTTPS
