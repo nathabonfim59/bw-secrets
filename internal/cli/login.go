@@ -2,6 +2,8 @@ package cli
 
 import (
 	"bufio"
+	"cmp"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -46,15 +48,6 @@ Use --folder to restrict the session to a single personal folder, or
 		if rescope && !all && loginFolder == "" && loginCollection == "" {
 			return fmt.Errorf("choose --folder, --organization with --collection, or --all")
 		}
-		if loginFolder != "" && loginCollection != "" {
-			return fmt.Errorf("--folder and --collection are mutually exclusive")
-		}
-		if loginCollection != "" && loginOrganization == "" {
-			return fmt.Errorf("--organization is required when using --collection")
-		}
-		if loginOrganization != "" && loginCollection == "" {
-			return fmt.Errorf("--collection is required when using --organization")
-		}
 
 		reader := bufio.NewReader(os.Stdin)
 		previous, err := keyring.LoadProfile(activeProfile.Name)
@@ -72,11 +65,7 @@ Use --folder to restrict the session to a single personal folder, or
 		}
 		if serverURL == "" {
 			var err error
-			defaultURL := previous.ServerURL
-			if defaultURL == "" {
-				defaultURL = "https://vault.bitwarden.com"
-			}
-			serverURL, err = prompt(reader, "Server URL", defaultURL)
+			serverURL, err = prompt(reader, "Server URL", cmp.Or(previous.ServerURL, "https://vault.bitwarden.com"))
 			if err != nil {
 				return fmt.Errorf("reading server URL: %w", err)
 			}
@@ -91,112 +80,30 @@ Use --folder to restrict the session to a single personal folder, or
 			}
 		}
 
-		fmt.Fprint(os.Stderr, "Master password: ")
-		passwordBytes, err := readPassword(int(os.Stdin.Fd()))
-		fmt.Fprintln(os.Stderr)
-		if err != nil {
-			return fmt.Errorf("reading password: %w", err)
-		}
-		password := string(passwordBytes)
-
 		client := api.NewClient(serverURL)
-
-		fmt.Fprintln(os.Stderr, "Authenticating...")
-		prelogin, err := client.Prelogin(cmd.Context(), email)
+		creds, symKey, err := authenticate(cmd.Context(), client, serverURL, email)
 		if err != nil {
-			return fmt.Errorf("prelogin: %w", err)
+			return err
 		}
-
-		masterKey, err := crypto.MakeMasterKey(password, email,
-			prelogin.Kdf, prelogin.KdfIterations, prelogin.KdfMemory, prelogin.KdfParallelism)
-		if err != nil {
-			return fmt.Errorf("deriving master key: %w", err)
-		}
-
-		passwordHash := crypto.MakePasswordHash(masterKey, password)
-
-		deviceID := newUUID()
-		tokenResp, err := client.Login(cmd.Context(), email, passwordHash, deviceID)
-		if err != nil {
-			if twoFactor, ok := errors.AsType[*api.TwoFactorError](err); ok {
-				fmt.Fprint(os.Stderr, "TOTP code: ")
-				totpBytes, terr := readPassword(int(os.Stdin.Fd()))
-				fmt.Fprintln(os.Stderr)
-				if terr != nil {
-					return fmt.Errorf("reading TOTP code: %w", terr)
-				}
-				totp := strings.TrimSpace(string(totpBytes))
-				if totp == "" {
-					return fmt.Errorf("TOTP code is required")
-				}
-				provider := "0"
-				if len(twoFactor.Providers) > 0 {
-					provider = twoFactor.Providers[0]
-				}
-				fmt.Fprintln(os.Stderr, "Verifying...")
-				tokenResp, err = client.LoginWithTwoFactor(cmd.Context(), email, passwordHash, provider, totp, deviceID)
-				if err != nil {
-					return fmt.Errorf("login with 2FA: %w", err)
-				}
-			} else {
-				return fmt.Errorf("login: %w", err)
-			}
-		}
-
-		if tokenResp.Key == "" {
-			return fmt.Errorf("server returned no encryption key")
-		}
-
-		stretchedKey, err := crypto.StretchKey(masterKey)
-		if err != nil {
-			return fmt.Errorf("stretching master key: %w", err)
-		}
-		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, stretchedKey)
-		if err != nil {
-			return fmt.Errorf("decrypting symmetric key: %w", err)
-		}
-
-		rawKey := make([]byte, 64)
-		copy(rawKey[0:32], symKey.EncryptionKey[:])
-		copy(rawKey[32:64], symKey.MACKey[:])
-
-		creds := &keyring.Credentials{
-			Remember:     remember,
-			ServerURL:    serverURL,
-			Email:        email,
-			AccessToken:  tokenResp.AccessToken,
-			RefreshToken: tokenResp.RefreshToken,
-			EncKey:       base64.StdEncoding.EncodeToString(rawKey),
-		}
+		creds.Remember = remember
 		if !all && loginFolder == "" && loginCollection == "" && previous.ServerURL == serverURL && strings.EqualFold(previous.Email, email) {
 			creds.Scope = previous.Scope
 		}
 
 		if loginFolder != "" || loginCollection != "" {
-			client.SetAccessToken(tokenResp.AccessToken)
 			syncResp, err := client.Sync(cmd.Context())
 			if err != nil {
 				return fmt.Errorf("syncing vault for scope lookup: %w", err)
 			}
-
-			var scope *keyring.Scope
-
 			if loginFolder != "" {
-				scope, err = resolveFolderScope(syncResp, loginFolder, symKey)
-				if err != nil {
-					return err
-				}
+				creds.Scope, err = resolveFolderScope(syncResp, loginFolder, symKey)
+			} else {
+				creds.Scope, err = resolveCollectionScope(syncResp, loginOrganization, loginCollection, symKey)
 			}
-
-			if loginCollection != "" {
-				scope, err = resolveCollectionScope(syncResp, loginOrganization, loginCollection, symKey)
-				if err != nil {
-					return err
-				}
+			if err != nil {
+				return err
 			}
-
-			creds.Scope = scope
-			fmt.Fprintf(os.Stderr, "Scoped to %s: %s\n", scope.Type, scope.Name)
+			fmt.Fprintf(os.Stderr, "Scoped to %s: %s\n", creds.Scope.Type, creds.Scope.Name)
 		}
 
 		if !rescope {
@@ -224,10 +131,88 @@ Use --folder to restrict the session to a single personal folder, or
 		if err := keyring.SaveProfile(activeProfile.Name, creds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)
 		}
-
 		fmt.Fprintf(os.Stderr, "Logged in as %s on %s\n", email, serverURL)
 		return nil
 	},
+}
+
+func authenticate(ctx context.Context, client *api.Client, serverURL, email string) (*keyring.Credentials, *crypto.SymmetricKey, error) {
+	fmt.Fprint(os.Stderr, "Master password: ")
+	passwordBytes, err := readPassword(int(os.Stdin.Fd()))
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading password: %w", err)
+	}
+	password := string(passwordBytes)
+
+	fmt.Fprintln(os.Stderr, "Authenticating...")
+	prelogin, err := client.Prelogin(ctx, email)
+	if err != nil {
+		return nil, nil, fmt.Errorf("prelogin: %w", err)
+	}
+
+	masterKey, err := crypto.MakeMasterKey(password, email,
+		prelogin.Kdf, prelogin.KdfIterations, prelogin.KdfMemory, prelogin.KdfParallelism)
+	if err != nil {
+		return nil, nil, fmt.Errorf("deriving master key: %w", err)
+	}
+
+	passwordHash := crypto.MakePasswordHash(masterKey, password)
+
+	deviceID := newUUID()
+	tokenResp, err := client.Login(ctx, email, passwordHash, deviceID)
+	if err != nil {
+		if twoFactor, ok := errors.AsType[*api.TwoFactorError](err); ok {
+			fmt.Fprint(os.Stderr, "TOTP code: ")
+			totpBytes, terr := readPassword(int(os.Stdin.Fd()))
+			fmt.Fprintln(os.Stderr)
+			if terr != nil {
+				return nil, nil, fmt.Errorf("reading TOTP code: %w", terr)
+			}
+			totp := strings.TrimSpace(string(totpBytes))
+			if totp == "" {
+				return nil, nil, fmt.Errorf("TOTP code is required")
+			}
+			provider := "0"
+			if len(twoFactor.Providers) > 0 {
+				provider = twoFactor.Providers[0]
+			}
+			fmt.Fprintln(os.Stderr, "Verifying...")
+			tokenResp, err = client.LoginWithTwoFactor(ctx, email, passwordHash, provider, totp, deviceID)
+			if err != nil {
+				return nil, nil, fmt.Errorf("login with 2FA: %w", err)
+			}
+		} else {
+			return nil, nil, fmt.Errorf("login: %w", err)
+		}
+	}
+
+	if tokenResp.Key == "" {
+		return nil, nil, fmt.Errorf("server returned no encryption key")
+	}
+
+	stretchedKey, err := crypto.StretchKey(masterKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("stretching master key: %w", err)
+	}
+	symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, stretchedKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("decrypting symmetric key: %w", err)
+	}
+
+	rawKey := make([]byte, 64)
+	copy(rawKey[0:32], symKey.EncryptionKey[:])
+	copy(rawKey[32:64], symKey.MACKey[:])
+
+	creds := &keyring.Credentials{
+		ServerURL:    serverURL,
+		Email:        email,
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		EncKey:       base64.StdEncoding.EncodeToString(rawKey),
+	}
+	client.SetAccessToken(creds.AccessToken)
+	return creds, symKey, nil
 }
 
 func resolveFolderScope(syncResp *api.SyncResponse, folderName string, symKey *crypto.SymmetricKey) (*keyring.Scope, error) {
@@ -286,6 +271,8 @@ func init() {
 		cmd.Flags().String("organization", "", "Organization name or UUID (required with --collection)")
 		cmd.Flags().String("collection", "", "Restrict session to this collection name or UUID (requires --organization)")
 		cmd.Flags().Bool("all", false, "Remove the saved scope")
+		cmd.MarkFlagsMutuallyExclusive("folder", "collection")
+		cmd.MarkFlagsRequiredTogether("organization", "collection")
 	}
 	loginCmd.Flags().Bool("remember", false, "Remember server and email; skip the end-of-login question")
 	loginCmd.Flags().Bool("edit", false, "Review remembered server and email before login")

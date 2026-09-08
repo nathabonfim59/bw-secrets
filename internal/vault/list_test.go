@@ -1,10 +1,11 @@
 package vault
 
 import (
-	"github.com/nathabonfim59/bw-secrets/internal/api"
-	"github.com/nathabonfim59/bw-secrets/internal/keyring"
 	"slices"
 	"testing"
+
+	"github.com/nathabonfim59/bw-secrets/internal/api"
+	"github.com/nathabonfim59/bw-secrets/internal/keyring"
 )
 
 func TestListHierarchyAndScope(t *testing.T) {

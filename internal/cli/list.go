@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"text/tabwriter"
 	"text/template"
 
@@ -11,6 +12,8 @@ import (
 )
 
 var listCmd = newListCommand()
+
+var itemTypes = []string{"login", "note", "card", "identity"}
 
 func init() { rootCmd.AddCommand(listCmd) }
 
@@ -37,7 +40,7 @@ func newListCommand() *cobra.Command {
 				o.Folder, o.Kind = o.Kind, "items"
 			}
 			if itemType != "" {
-				if typeNameToInt(itemType) == 0 {
+				if !slices.Contains(itemTypes, itemType) {
 					return fmt.Errorf("unknown item type %q", itemType)
 				}
 				if o.Kind != "items" {
@@ -111,18 +114,4 @@ func newListCommand() *cobra.Command {
 	f.StringVarP(&format, "format", "o", "table", "Output: table, json, text (UUIDs), template")
 	f.StringVar(&tmpl, "template", "", "Go template over metadata entries")
 	return cmd
-}
-
-func typeNameToInt(name string) int {
-	switch name {
-	case "login":
-		return 1
-	case "note":
-		return 2
-	case "card":
-		return 3
-	case "identity":
-		return 4
-	}
-	return 0
 }

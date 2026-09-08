@@ -23,12 +23,11 @@ func TestListOutput(t *testing.T) {
 	previous := activeProfile
 	activeProfile = profile.Selection{Name: "listing"}
 	t.Cleanup(func() { activeProfile = previous })
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/sync" {
-			t.Errorf("unexpected request %s", r.URL.Path)
-		}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/sync", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"Ciphers":[{"Id":"item-id","Name":"Example Login","Type":1,"Login":{"Password":"never-print-this"}}]}`)
-	}))
+	})
+	server := httptest.NewServer(mux)
 	defer server.Close()
 	if err := keyring.SaveProfile("listing", &keyring.Credentials{ServerURL: server.URL, AccessToken: "token", EncKey: base64.StdEncoding.EncodeToString(make([]byte, 64))}); err != nil {
 		t.Fatal(err)
