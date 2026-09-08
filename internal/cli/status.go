@@ -18,11 +18,13 @@ var statusCmd = &cobra.Command{
 	Short: "Show login status.",
 	Long:  "Displays whether you are logged in, to which server, and token expiry.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		creds, err := keyring.Load()
+		fmt.Fprintf(os.Stderr, "Profile: %s (%s)\n", activeProfile.Name, activeProfile.Source)
+		if activeProfile.Directory != "" {
+			fmt.Fprintf(os.Stderr, "Directory: %s\n", activeProfile.Directory)
+		}
+		creds, err := keyring.LoadProfile(activeProfile.Name)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not logged in — run 'bw-secrets login'")
-			os.Exit(2)
-			return nil
+			return err
 		}
 
 		expiresIn := tokenExpiry(creds.AccessToken)

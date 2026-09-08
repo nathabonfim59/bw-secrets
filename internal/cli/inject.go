@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -32,21 +31,10 @@ current environment, enabling multi-environment config templates:
   APP_ENV=prod bw-secrets inject -i config.yml.tpl`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		v, symKey, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
-
-		symKey, err := getSymmetricKey(creds)
-		if err != nil {
-			return err
-		}
-
-		syncResp, err := client.Sync(context.Background())
-		if err != nil {
-			return fmt.Errorf("syncing vault: %w", err)
-		}
-		v := vault.New(syncResp, symKey, creds.Scope)
 
 		var input []byte
 		source := injectInFile
@@ -110,18 +98,8 @@ func init() {
 	injectCmd.Flags().StringVarP(&injectOutFile, "out-file", "o", "", "Output file (default: stdout)")
 }
 
-var envVarTemplateRe = regexp.MustCompile(`\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?`)
-
 func expandEnvTemplate(text string) string {
-	return envVarTemplateRe.ReplaceAllStringFunc(text, func(match string) string {
-		name := match
-		if strings.HasPrefix(match, "${") {
-			name = match[2 : len(match)-1]
-		} else if strings.HasPrefix(match, "$") {
-			name = match[1:]
-		}
-		return os.Getenv(name)
-	})
+	return expandEnvVars(text, nil)
 }
 
 func dedupeURIs(uris []string) []string {

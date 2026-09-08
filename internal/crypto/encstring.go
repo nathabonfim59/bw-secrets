@@ -81,7 +81,8 @@ func (e *EncString) Decrypt(key *SymmetricKey) (string, error) {
 	case 0:
 		return "", ErrUnauthenticated
 	case 2:
-		return e.decryptAesCbc256Hmac(key)
+		plaintext, err := e.decryptAesCbc256Hmac(key)
+		return string(plaintext), err
 	default:
 		return "", ErrUnknownEncType
 	}
@@ -92,50 +93,34 @@ func (e *EncString) DecryptWithKey(rawKey []byte) ([]byte, error) {
 	case 0:
 		return nil, ErrUnauthenticated
 	case 2:
-		mac := hmac.New(sha256.New, rawKey[32:64])
-		mac.Write(e.IV)
-		mac.Write(e.CipherText)
-		if !hmac.Equal(mac.Sum(nil), e.MAC) {
-			return nil, ErrMACMismatch
-		}
-		block, err := aes.NewCipher(rawKey[0:32])
+		key, err := NewSymmetricKey(rawKey)
 		if err != nil {
 			return nil, err
 		}
-		if len(e.CipherText)%aes.BlockSize != 0 {
-			return nil, errors.New("ciphertext is not a multiple of block size")
-		}
-		mode := cipher.NewCBCDecrypter(block, e.IV)
-		plaintext := make([]byte, len(e.CipherText))
-		mode.CryptBlocks(plaintext, e.CipherText)
-		return pkcs7Unpad(plaintext)
+		return e.decryptAesCbc256Hmac(key)
 	default:
 		return nil, ErrUnknownEncType
 	}
 }
 
-func (e *EncString) decryptAesCbc256Hmac(key *SymmetricKey) (string, error) {
+func (e *EncString) decryptAesCbc256Hmac(key *SymmetricKey) ([]byte, error) {
 	mac := hmac.New(sha256.New, key.MACKey[:])
 	mac.Write(e.IV)
 	mac.Write(e.CipherText)
 	if !hmac.Equal(mac.Sum(nil), e.MAC) {
-		return "", ErrMACMismatch
+		return nil, ErrMACMismatch
 	}
 	block, err := aes.NewCipher(key.EncryptionKey[:])
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(e.CipherText)%aes.BlockSize != 0 {
-		return "", errors.New("ciphertext is not a multiple of block size")
+		return nil, errors.New("ciphertext is not a multiple of block size")
 	}
 	mode := cipher.NewCBCDecrypter(block, e.IV)
 	plaintext := make([]byte, len(e.CipherText))
 	mode.CryptBlocks(plaintext, e.CipherText)
-	unpadded, err := pkcs7Unpad(plaintext)
-	if err != nil {
-		return "", err
-	}
-	return string(unpadded), nil
+	return pkcs7Unpad(plaintext)
 }
 
 func pkcs7Unpad(data []byte) ([]byte, error) {

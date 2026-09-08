@@ -1,44 +1,38 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/nathabonfim59/bw-secrets/internal/api"
 	"github.com/nathabonfim59/bw-secrets/internal/crypto"
 	"github.com/nathabonfim59/bw-secrets/internal/keyring"
+	"github.com/nathabonfim59/bw-secrets/internal/vault"
 )
 
-func getClient() (*api.Client, *keyring.Credentials, error) {
-	creds, err := keyring.Load()
+func getClient(ctx context.Context) (*api.Client, *keyring.Credentials, error) {
+	creds, err := keyring.LoadProfile(activeProfile.Name)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Not logged in — run 'bw-secrets login'")
-		os.Exit(2)
-		return nil, nil, nil
+		return nil, nil, err
 	}
 
-	url := serverURL()
-	if url == "" {
-		url = creds.ServerURL
-	}
+	url := cmp.Or(serverURL(), creds.ServerURL)
 
 	expiry := tokenExpiry(creds.AccessToken)
 	if expiry >= 0 && expiry < 5*time.Minute {
 		client := api.NewClient(url)
-		tokenResp, err := client.RefreshToken(context.Background(), creds.RefreshToken)
+		tokenResp, err := client.RefreshToken(ctx, creds.RefreshToken)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Session expired — run 'bw-secrets unlock'")
-			os.Exit(2)
-			return nil, nil, nil
+			return nil, nil, fmt.Errorf("refreshing session (run 'bw-secrets unlock' if expired): %w", err)
 		}
 		creds.AccessToken = tokenResp.AccessToken
 		creds.RefreshToken = tokenResp.RefreshToken
-		if err := keyring.Save(creds); err != nil {
+		if err := keyring.SaveProfile(activeProfile.Name, creds); err != nil {
 			return nil, nil, fmt.Errorf("saving refreshed tokens: %w", err)
 		}
 	}
@@ -48,12 +42,24 @@ func getClient() (*api.Client, *keyring.Credentials, error) {
 	return client, creds, nil
 }
 
-func getSymmetricKey(creds *keyring.Credentials) (*crypto.SymmetricKey, error) {
+func loadVault(ctx context.Context) (*vault.Vault, *crypto.SymmetricKey, error) {
+	client, creds, err := getClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	raw, err := base64.StdEncoding.DecodeString(creds.EncKey)
 	if err != nil {
-		return nil, fmt.Errorf("decoding enc key: %w", err)
+		return nil, nil, fmt.Errorf("decoding enc key: %w", err)
 	}
-	return crypto.NewSymmetricKey(raw)
+	key, err := crypto.NewSymmetricKey(raw)
+	if err != nil {
+		return nil, nil, err
+	}
+	synced, err := client.Sync(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("syncing vault: %w", err)
+	}
+	return vault.New(synced, key, creds.Scope), key, nil
 }
 
 func tokenExpiry(accessToken string) time.Duration {

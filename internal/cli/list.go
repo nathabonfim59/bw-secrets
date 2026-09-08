@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	"github.com/nathabonfim59/bw-secrets/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -21,22 +19,10 @@ var listCmd = &cobra.Command{
 	Long:  "Syncs the vault and lists all items, optionally filtered by vault name or item type.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		v, _, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
-
-		symKey, err := getSymmetricKey(creds)
-		if err != nil {
-			return err
-		}
-
-		syncResp, err := client.Sync(context.Background())
-		if err != nil {
-			return fmt.Errorf("syncing vault: %w", err)
-		}
-
-		v := vault.New(syncResp, symKey, creds.Scope)
 
 		vaultName := ""
 		if len(args) > 0 {

@@ -1,13 +1,15 @@
 package cli
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/nathabonfim59/bw-secrets/internal/profile"
 	"github.com/nathabonfim59/bw-secrets/internal/vault"
 	"github.com/spf13/cobra"
 )
@@ -33,27 +35,15 @@ Examples:
   bw-secrets run --env-file prod.env -- mysqldump ...`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		v, symKey, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
-
-		symKey, err := getSymmetricKey(creds)
-		if err != nil {
-			return err
-		}
-
-		syncResp, err := client.Sync(context.Background())
-		if err != nil {
-			return fmt.Errorf("syncing vault: %w", err)
-		}
-		v := vault.New(syncResp, symKey, creds.Scope)
 
 		combinedEnv := make(map[string]string)
 		for _, kv := range os.Environ() {
-			parts := strings.SplitN(kv, "=", 2)
-			if len(parts) == 2 {
-				combinedEnv[parts[0]] = parts[1]
+			if key, value, ok := strings.Cut(kv, "="); ok {
+				combinedEnv[key] = value
 			}
 		}
 		for _, f := range runEnvFiles {
@@ -61,10 +51,10 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("parsing env file %q: %w", f, err)
 			}
-			for k, v := range fileVars {
-				combinedEnv[k] = v
-			}
+			maps.Copy(combinedEnv, fileVars)
 		}
+		// Propagate the resolved context, including directory and flag overrides.
+		combinedEnv[profile.Env] = activeProfile.Name
 
 		var secrets []string
 
@@ -89,7 +79,7 @@ Examples:
 			cmdEnv = append(cmdEnv, k+"="+v)
 		}
 
-		subCmd := exec.Command(args[0], args[1:]...)
+		subCmd := exec.CommandContext(cmd.Context(), args[0], args[1:]...)
 		subCmd.Env = cmdEnv
 		subCmd.Stdin = os.Stdin
 
@@ -102,7 +92,10 @@ Examples:
 		}
 
 		if err := subCmd.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
+			if cmd.Context().Err() != nil {
+				return cmd.Context().Err()
+			}
+			if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 				os.Exit(exitErr.ExitCode())
 			}
 			return err

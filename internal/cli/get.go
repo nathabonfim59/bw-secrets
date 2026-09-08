@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -22,22 +21,10 @@ var getCmd = &cobra.Command{
 By default, only metadata is shown. Use --reveal to output the actual value.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		v, symKey, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
-
-		symKey, err := getSymmetricKey(creds)
-		if err != nil {
-			return err
-		}
-
-		syncResp, err := client.Sync(context.Background())
-		if err != nil {
-			return fmt.Errorf("syncing vault: %w", err)
-		}
-
-		v := vault.New(syncResp, symKey, creds.Scope)
 
 		uri, err := vault.ParseURI(args[0])
 		if err != nil {

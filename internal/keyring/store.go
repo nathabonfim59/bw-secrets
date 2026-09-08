@@ -3,9 +3,11 @@ package keyring
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/nathabonfim59/bw-secrets/internal/profile"
 	"github.com/zalando/go-keyring"
 )
 
@@ -31,27 +33,30 @@ type Credentials struct {
 	Scope        *Scope `json:"scope,omitempty"`
 }
 
-func Save(creds *Credentials) error {
+func SaveProfile(name string, creds *Credentials) error {
+	if err := profile.Validate(name); err != nil {
+		return err
+	}
 	data, err := json.Marshal(creds)
 	if err != nil {
 		return err
 	}
-	err = keyring.Set(serviceName, keyName, string(data))
+	err = keyring.Set(serviceName, name, string(data))
 	if err != nil {
-		return fileSave(string(data))
+		return fileSaveProfile(name, string(data))
 	}
-	return nil
+	return fileDeleteProfile(name)
 }
 
-func Load() (*Credentials, error) {
-	data, err := keyring.Get(serviceName, keyName)
+func LoadProfile(name string) (*Credentials, error) {
+	if err := profile.Validate(name); err != nil {
+		return nil, err
+	}
+	data, err := keyring.Get(serviceName, name)
 	if err != nil {
-		if errors.Is(err, keyring.ErrNotFound) {
-			return nil, ErrNotLoggedIn
-		}
-		data, err = fileLoad()
+		data, err = fileLoadProfile(name)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("profile %q: %w", name, err)
 		}
 	}
 	var creds Credentials
@@ -61,21 +66,35 @@ func Load() (*Credentials, error) {
 	return &creds, nil
 }
 
-func Delete() error {
-	keyring.Delete(serviceName, keyName)
-	return fileDelete()
+func DeleteProfile(name string) error {
+	if err := profile.Validate(name); err != nil {
+		return err
+	}
+	err := keyring.Delete(serviceName, name)
+	fileErr := fileDeleteProfile(name)
+	// A missing key is expected when this profile uses file storage.
+	if errors.Is(err, keyring.ErrNotFound) {
+		err = nil
+	}
+	return errors.Join(err, fileErr)
 }
 
-func filePath() (string, error) {
+func profileFilePath(name string) (string, error) {
+	if err := profile.Validate(name); err != nil {
+		return "", err
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "bw-secrets", "credentials.json"), nil
+	if name == keyName {
+		return filepath.Join(configDir, "bw-secrets", "credentials.json"), nil
+	}
+	return filepath.Join(configDir, "bw-secrets", "profiles", name, "credentials.json"), nil
 }
 
-func fileSave(data string) error {
-	path, err := filePath()
+func fileSaveProfile(name, data string) error {
+	path, err := profileFilePath(name)
 	if err != nil {
 		return err
 	}
@@ -85,8 +104,8 @@ func fileSave(data string) error {
 	return os.WriteFile(path, []byte(data), 0600)
 }
 
-func fileLoad() (string, error) {
-	path, err := filePath()
+func fileLoadProfile(name string) (string, error) {
+	path, err := profileFilePath(name)
 	if err != nil {
 		return "", err
 	}
@@ -100,11 +119,14 @@ func fileLoad() (string, error) {
 	return string(data), nil
 }
 
-func fileDelete() error {
-	path, err := filePath()
+func fileDeleteProfile(name string) error {
+	path, err := profileFilePath(name)
 	if err != nil {
 		return err
 	}
-	os.Remove(path)
-	return nil
+	err = os.Remove(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }

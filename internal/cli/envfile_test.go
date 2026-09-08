@@ -103,8 +103,7 @@ MIXED=http://${HOST}:$PORT`
 }
 
 func TestParseEnvFileEnvExpansion(t *testing.T) {
-	os.Setenv("TEST_ENV_VAR", "from-env")
-	defer os.Unsetenv("TEST_ENV_VAR")
+	t.Setenv("TEST_ENV_VAR", "from-env")
 
 	dir := t.TempDir()
 	path := filepath.Join(dir, "env-expand.env")
@@ -124,8 +123,7 @@ func TestParseEnvFileEnvExpansion(t *testing.T) {
 }
 
 func TestParseEnvFileSingleQuotesNoExpansion(t *testing.T) {
-	os.Setenv("VAR", "expanded")
-	defer os.Unsetenv("VAR")
+	t.Setenv("VAR", "expanded")
 
 	dir := t.TempDir()
 	path := filepath.Join(dir, "noexpand.env")

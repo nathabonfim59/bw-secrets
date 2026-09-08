@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"context"
+	"cmp"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -24,11 +24,9 @@ var unlockCmd = &cobra.Command{
 	Long: `Loads stored server URL and email from the keyring, prompts for the
 master password, and re-authenticates to obtain fresh tokens.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		creds, err := keyring.Load()
+		creds, err := keyring.LoadProfile(activeProfile.Name)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Not logged in — run 'bw-secrets login'")
-			os.Exit(2)
-			return nil
+			return err
 		}
 
 		fmt.Fprint(os.Stderr, "Master password: ")
@@ -39,16 +37,13 @@ master password, and re-authenticates to obtain fresh tokens.`,
 		}
 		password := string(passwordBytes)
 
-		url := serverURL()
-		if url == "" {
-			url = creds.ServerURL
-		}
+		url := cmp.Or(serverURL(), creds.ServerURL)
 		url = strings.TrimRight(url, "/")
 
 		client := api.NewClient(url)
 
 		fmt.Fprintln(os.Stderr, "Authenticating...")
-		prelogin, err := client.Prelogin(context.Background(), creds.Email)
+		prelogin, err := client.Prelogin(cmd.Context(), creds.Email)
 		if err != nil {
 			return fmt.Errorf("prelogin: %w", err)
 		}
@@ -62,7 +57,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 		passwordHash := crypto.MakePasswordHash(masterKey, password)
 
 		deviceID := newUUID()
-		tokenResp, err := client.Login(context.Background(), creds.Email, passwordHash, deviceID)
+		tokenResp, err := client.Login(cmd.Context(), creds.Email, passwordHash, deviceID)
 		if err != nil {
 			return fmt.Errorf("login: %w", err)
 		}
@@ -71,7 +66,11 @@ master password, and re-authenticates to obtain fresh tokens.`,
 			return fmt.Errorf("server returned no encryption key")
 		}
 
-		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, crypto.StretchKey(masterKey))
+		stretchedKey, err := crypto.StretchKey(masterKey)
+		if err != nil {
+			return fmt.Errorf("stretching master key: %w", err)
+		}
+		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, stretchedKey)
 		if err != nil {
 			return fmt.Errorf("decrypting symmetric key: %w", err)
 		}
@@ -88,7 +87,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 			EncKey:       base64.StdEncoding.EncodeToString(rawKey),
 			Scope:        creds.Scope,
 		}
-		if err := keyring.Save(newCreds); err != nil {
+		if err := keyring.SaveProfile(activeProfile.Name, newCreds); err != nil {
 			return fmt.Errorf("saving to keyring: %w", err)
 		}
 

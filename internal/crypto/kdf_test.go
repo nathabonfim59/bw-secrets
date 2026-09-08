@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"testing"
 )
 
@@ -66,21 +67,15 @@ func TestStretchKey(t *testing.T) {
 	for i := range masterKey {
 		masterKey[i] = byte(i + 1)
 	}
-	stretched := StretchKey(masterKey)
-	if len(stretched) != 64 {
-		t.Fatalf("stretched key length = %d, want 64", len(stretched))
+	stretched, err := StretchKey(masterKey)
+	if err != nil {
+		t.Fatal(err)
 	}
-	enc := stretched[0:32]
-	mac := stretched[32:64]
-	if string(enc) == string(mac) {
-		t.Error("enc and mac halves should differ")
+	// Independently calculated RFC 5869 expand blocks for info "enc" and "mac".
+	const want = "430a9d9e1d1a5d5bc8b184256c7fbadd33c27d1e6d276a801bdcd07c1c0003eac4b2c51ed7aa2f27c4b7e5dcf19f3950a2b3222b1d764d7b3f657e9e509add10"
+	if got := hex.EncodeToString(stretched); got != want {
+		t.Errorf("stretched key = %s, want %s", got, want)
 	}
-	for _, b := range enc {
-		if b != 0 {
-			return // found non-zero byte, valid
-		}
-	}
-	t.Error("enc key half is all zeros")
 }
 
 func TestStretchKeyRoundtrip(t *testing.T) {
@@ -90,7 +85,10 @@ func TestStretchKeyRoundtrip(t *testing.T) {
 	}
 
 	plaintext := []byte("secret data to encrypt")
-	encKey := StretchKey(masterKey)
+	encKey, err := StretchKey(masterKey)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	encStr := encryptTestString(string(plaintext), encKey[0:32], encKey[32:64])
 

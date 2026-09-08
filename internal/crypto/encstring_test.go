@@ -18,7 +18,7 @@ func TestNewSymmetricKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		if sk.EncryptionKey[i] != byte(i) {
 			t.Errorf("EncryptionKey[%d] = %d, want %d", i, sk.EncryptionKey[i], i)
 		}

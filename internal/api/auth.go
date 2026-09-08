@@ -17,13 +17,13 @@ func (c *Client) Prelogin(ctx context.Context, email string) (*PreloginResponse,
 
 func (c *Client) Login(ctx context.Context, email, passwordHash string, deviceID string) (*TokenResponse, error) {
 	data := url.Values{
-		"grant_type":    {"password"},
-		"username":      {email},
-		"password":      {passwordHash},
-		"scope":         {"api offline_access"},
-		"client_id":     {"browser"},
-		"deviceType":    {"14"},
-		"deviceName":    {"bw-secrets"},
+		"grant_type": {"password"},
+		"username":   {email},
+		"password":   {passwordHash},
+		"scope":      {"api offline_access"},
+		"client_id":  {"browser"},
+		"deviceType": {"14"},
+		"deviceName": {"bw-secrets"},
 	}
 	if deviceID != "" {
 		data.Set("deviceIdentifier", deviceID)
@@ -31,7 +31,7 @@ func (c *Client) Login(ctx context.Context, email, passwordHash string, deviceID
 
 	reqBody := strings.NewReader(data.Encode())
 	var result TokenResponse
-	err := c.do(ctx, "POST", "/identity/connect/token", reqBody, &result)
+	err := c.do(ctx, "POST", "/identity/connect/token", "application/x-www-form-urlencoded", reqBody, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenR
 	}
 	reqBody := strings.NewReader(data.Encode())
 	var result TokenResponse
-	err := c.do(ctx, "POST", "/identity/connect/token", reqBody, &result)
+	err := c.do(ctx, "POST", "/identity/connect/token", "application/x-www-form-urlencoded", reqBody, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -55,16 +55,16 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenR
 
 func (c *Client) LoginWithTwoFactor(ctx context.Context, email, passwordHash, provider, token, deviceID string) (*TokenResponse, error) {
 	data := url.Values{
-		"grant_type":         {"password"},
-		"username":           {email},
-		"password":           {passwordHash},
-		"scope":              {"api offline_access"},
-		"client_id":          {"browser"},
-		"deviceType":         {"14"},
-		"deviceName":         {"bw-secrets"},
-		"TwoFactorProvider":  {provider},
-		"TwoFactorToken":     {token},
-		"TwoFactorRemember":  {"1"},
+		"grant_type":        {"password"},
+		"username":          {email},
+		"password":          {passwordHash},
+		"scope":             {"api offline_access"},
+		"client_id":         {"browser"},
+		"deviceType":        {"14"},
+		"deviceName":        {"bw-secrets"},
+		"TwoFactorProvider": {provider},
+		"TwoFactorToken":    {token},
+		"TwoFactorRemember": {"1"},
 	}
 	if deviceID != "" {
 		data.Set("deviceIdentifier", deviceID)
@@ -72,7 +72,7 @@ func (c *Client) LoginWithTwoFactor(ctx context.Context, email, passwordHash, pr
 
 	reqBody := strings.NewReader(data.Encode())
 	var result TokenResponse
-	err := c.do(ctx, "POST", "/identity/connect/token", reqBody, &result)
+	err := c.do(ctx, "POST", "/identity/connect/token", "application/x-www-form-urlencoded", reqBody, &result)
 	if err != nil {
 		return nil, err
 	}

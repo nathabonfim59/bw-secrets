@@ -1,8 +1,8 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -40,11 +40,11 @@ func TestLoginReturnsTwoFactorError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	_, err := client.Login(context.Background(), "test@example.com", "hash", "device-id")
+	_, err := client.Login(t.Context(), "test@example.com", "hash", "device-id")
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	tfe, ok := err.(*TwoFactorError)
+	tfe, ok := errors.AsType[*TwoFactorError](err)
 	if !ok {
 		t.Fatalf("expected TwoFactorError, got %T: %v", err, err)
 	}
@@ -67,7 +67,7 @@ func TestLoginWithTwoFactor(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	resp, err := client.LoginWithTwoFactor(context.Background(), "test@example.com", "hash", "0", "123456", "device-id")
+	resp, err := client.LoginWithTwoFactor(t.Context(), "test@example.com", "hash", "0", "123456", "device-id")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,11 +93,60 @@ func TestHTTP400NotTwoFactor(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	_, err := client.Prelogin(context.Background(), "test@example.com")
+	_, err := client.Prelogin(t.Context(), "test@example.com")
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if _, ok := err.(*TwoFactorError); ok {
+	if _, ok := errors.AsType[*TwoFactorError](err); ok {
 		t.Error("should not be a TwoFactorError for non-2FA 400")
+	}
+}
+
+func TestRequestEncodings(t *testing.T) {
+	for _, kind := range []string{"json", "form", "sync"} {
+		t.Run(kind, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != "Bearer test-token" || r.Header.Get("Device-Type") != "14" {
+					t.Error("missing common request headers")
+				}
+				switch kind {
+				case "json":
+					if r.Method != "POST" || r.URL.Path != "/api/accounts/prelogin" || r.Header.Get("Content-Type") != "application/json" {
+						t.Error("incorrect JSON request metadata")
+					}
+					var body map[string]string
+					if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["email"] != "test@example.com" {
+						t.Errorf("incorrect JSON body: %v, %v", body, err)
+					}
+				case "form":
+					if r.Method != "POST" || r.URL.Path != "/identity/connect/token" || r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
+						t.Error("incorrect form request metadata")
+					}
+					if err := r.ParseForm(); err != nil || r.Form.Get("refresh_token") != "refresh" {
+						t.Errorf("incorrect form body: %v", err)
+					}
+				case "sync":
+					if r.Method != "GET" || r.URL.Path != "/api/sync" || r.Header.Get("Content-Type") != "" {
+						t.Error("incorrect sync request metadata")
+					}
+				}
+				json.NewEncoder(w).Encode(map[string]string{})
+			}))
+			defer server.Close()
+			client := NewClient(server.URL)
+			client.SetAccessToken("test-token")
+			var err error
+			switch kind {
+			case "json":
+				_, err = client.Prelogin(t.Context(), "test@example.com")
+			case "form":
+				_, err = client.RefreshToken(t.Context(), "refresh")
+			case "sync":
+				_, err = client.Sync(t.Context())
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
