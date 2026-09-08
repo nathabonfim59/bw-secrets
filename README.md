@@ -69,9 +69,9 @@ bw-secrets --server https://bitwarden.example.com login
 bw-secrets status
 
 # List items
-bw-secrets list
+bw-secrets list -r                  # all items in the selected profile's scope
 bw-secrets list "Personal"           # filter by folder
-bw-secrets list --type login         # filter by type
+bw-secrets list login -r             # all login items
 
 # Resolve a secret (--reveal required to output the value)
 bw-secrets get bw://Personal/Google/password
@@ -270,16 +270,17 @@ Fields by item type:
 |---|---|
 | `login` | Authenticate and store credentials; use `--folder` or `--organization`/`--collection` to scope |
 | `unlock` | Re-authenticate when tokens expire |
-| `lock` | Clear the selected profile's stored credentials |
-| `logout` | Same as `lock` |
+| `lock` | Clear tokens and keys; preserve remembered login details |
+| `logout` | Delete the selected profile's credentials and remembered details |
+| `rescope` | Re-authenticate and change or remove the saved scope |
 | `status` | Show login status, token expiry, and active scope |
 | `profile current` | Print the effective profile for the current directory |
 | `profile use [name]` | Print a POSIX shell export for a named or effective profile |
 | `profile bind <name> [directory]` | Bind a profile recursively; defaults to the current directory |
 | `profile unbind [directory]` | Remove a directory's explicit binding |
-| `orgs` | List available organizations |
+| `orgs` | Alias for `list orgs`, including output and filtering flags |
 | `get` | Resolve a `bw://` URI (`op read` equivalent) |
-| `list` | List vault items |
+| `list` | List items, collections, organizations, or folders |
 | `run` | Inject secrets as env vars and run a command (`op run` equivalent) |
 | `inject` | Replace `bw://` refs in files/stdin (`op inject` equivalent) |
 
@@ -309,6 +310,82 @@ by this shared matrix; builds use `CGO_ENABLED=0`.
 To validate the complete release packaging locally, run `goreleaser check` and
 `goreleaser release --snapshot --clean`. `make release VERSION=v1.2.3` still creates
 the local tag before building; pushing that tag triggers the published CI release.
+
+## Listing, filters, and output
+
+```bash
+bw-secrets list collections
+bw-secrets list orgs
+bw-secrets list folders
+bw-secrets list login                  # top-level logins
+bw-secrets list login -r               # include items in folders/collections
+bw-secrets list login --organization "Acme Corp" -r
+bw-secrets list login --organization "Acme Corp" --collection "Engineering" -r
+bw-secrets list login --folder '<folder-uuid>' --search database -r
+bw-secrets list collections --organization '<org-uuid>' --format json
+bw-secrets list login --id '<item-uuid>' -r --format json
+bw-secrets list login --name 'Database' -r --format text
+bw-secrets list orgs --format template --template '{{range .}}{{.Name}}: {{.ID}}{{"\n"}}{{end}}'
+```
+
+Resource kinds are `items` (default), `login`, `note`, `card`, `identity`,
+`collections`, `orgs`, and `folders`. The legacy `list "Folder Name"` and
+`list --type login` forms remain supported. Use `--folder` for folder names
+that coincide with resource keywords.
+
+`--organization`, `--collection`, and `--folder` accept exact UUIDs or
+case-insensitive names. UUIDs take precedence; ambiguous container names require
+a UUID or an organization filter. `--name` matches an exact name, `--search`
+matches a name substring, and `--id` matches an exact UUID. Filters combine with
+AND. Unknown containers and inapplicable filters return errors.
+
+Without `-r`, unscoped item listings show items with neither a folder nor a
+collection. Selecting a folder or collection lists its direct items; `-r`
+also matches containers named `Parent/Child`, respecting slash boundaries and
+organization ownership. Bitwarden containers are flat records; this hierarchy
+is inferred from their names. Metadata listings include all visible containers,
+including empty ones, without requiring `-r`.
+
+A saved scope is the listing root. Its direct items remain visible without
+`-r`; recursive filters never widen the saved scope. Collection-scoped metadata
+shows that collection and its organization; folder-scoped metadata shows the
+folder and organizations/collections associated with its visible items.
+
+Output goes to **stdout**, sorted by name then UUID, and contains metadata only.
+`--format` (`-o`) supports `table` (default), `json` (an array, including `[]` for
+no results), `text` (one UUID per line), and `template` with `--template`.
+Templates receive entries with `ID`, `Name`, `Type`, `OrganizationID`, `FolderID`,
+and `CollectionIDs`. JSON uses snake_case field names. Passwords and other secret
+values are never included. Use JSON with `jq` for more elaborate projections.
+
+Scope flags on `login` and `rescope`, as well as folder, organization, collection,
+and item components in `bw://` references, also accept names or UUIDs:
+
+```bash
+bw-secrets get --reveal 'bw://<org-uuid>//<collection-uuid>/<item-uuid>/password'
+```
+
+## Remembering login details and changing scope
+
+After a successful login, answer the remember question to reuse the selected
+profile's host and email next time. Subsequent `login --profile work` needs only
+the master password (plus 2FA if required), retaining the saved scope.
+`login --edit` lets you review prefilled host/email values. Use `--remember` or
+`--remember=false` to set the preference without the final question.
+The preference is stored per profile with its credentials; passwords are never
+saved. Declining disables automatic reuse: host/email still exist in the stored
+session for refresh/unlock and appear as defaults. `lock` clears tokens and keys,
+preserving details only when remember is enabled. `logout` deletes these details.
+
+```bash
+bw-secrets rescope --profile work --folder 'Work Folder'
+bw-secrets rescope --profile work --organization '<org-uuid>' --collection '<collection-uuid>'
+bw-secrets rescope --profile work --all
+```
+
+`rescope` reuses the saved host/email and prompts for the master password and any
+required 2FA. It saves the new scope only after authentication and scope lookup
+succeed. `--all` removes the local scope restriction. Other profiles are unaffected.
 
 ## License
 
