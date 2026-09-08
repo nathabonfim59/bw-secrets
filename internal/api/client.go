@@ -27,7 +27,7 @@ func (c *Client) SetAccessToken(token string) {
 	c.accessToken = token
 }
 
-func (c *Client) do(ctx context.Context, method, path string, body io.Reader, result interface{}) error {
+func (c *Client) do(ctx context.Context, method, path string, body io.Reader, result any) error {
 	req, err := http.NewRequestWithContext(ctx, method, c.serverURL+path, body)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (c *Client) do(ctx context.Context, method, path string, body io.Reader, re
 	return nil
 }
 
-func (c *Client) postJSON(ctx context.Context, path string, body interface{}, result interface{}) error {
+func (c *Client) postJSON(ctx context.Context, path string, body any, result any) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
 		return err

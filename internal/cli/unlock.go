@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"context"
+	"cmp"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -37,16 +37,13 @@ master password, and re-authenticates to obtain fresh tokens.`,
 		}
 		password := string(passwordBytes)
 
-		url := serverURL()
-		if url == "" {
-			url = creds.ServerURL
-		}
+		url := cmp.Or(serverURL(), creds.ServerURL)
 		url = strings.TrimRight(url, "/")
 
 		client := api.NewClient(url)
 
 		fmt.Fprintln(os.Stderr, "Authenticating...")
-		prelogin, err := client.Prelogin(context.Background(), creds.Email)
+		prelogin, err := client.Prelogin(cmd.Context(), creds.Email)
 		if err != nil {
 			return fmt.Errorf("prelogin: %w", err)
 		}
@@ -60,7 +57,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 		passwordHash := crypto.MakePasswordHash(masterKey, password)
 
 		deviceID := newUUID()
-		tokenResp, err := client.Login(context.Background(), creds.Email, passwordHash, deviceID)
+		tokenResp, err := client.Login(cmd.Context(), creds.Email, passwordHash, deviceID)
 		if err != nil {
 			return fmt.Errorf("login: %w", err)
 		}

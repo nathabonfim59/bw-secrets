@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -32,7 +31,7 @@ current environment, enabling multi-environment config templates:
   APP_ENV=prod bw-secrets inject -i config.yml.tpl`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		client, creds, err := getClient(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -42,7 +41,7 @@ current environment, enabling multi-environment config templates:
 			return err
 		}
 
-		syncResp, err := client.Sync(context.Background())
+		syncResp, err := client.Sync(cmd.Context())
 		if err != nil {
 			return fmt.Errorf("syncing vault: %w", err)
 		}

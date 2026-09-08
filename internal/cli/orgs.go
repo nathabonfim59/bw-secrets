@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -17,12 +16,12 @@ var orgsCmd = &cobra.Command{
 	Short: "List available organizations.",
 	Long:  "Syncs the vault and prints organizations you belong to.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, _, err := getClient()
+		client, _, err := getClient(cmd.Context())
 		if err != nil {
 			return err
 		}
 
-		syncResp, err := client.Sync(context.Background())
+		syncResp, err := client.Sync(cmd.Context())
 		if err != nil {
 			return fmt.Errorf("syncing vault: %w", err)
 		}

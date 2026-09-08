@@ -2,16 +2,15 @@ package keyring
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestFileFallbackRoundtrip(t *testing.T) {
-	origConfigDir := os.Getenv("XDG_CONFIG_HOME")
 	tmpDir := t.TempDir()
-	os.Setenv("XDG_CONFIG_HOME", tmpDir)
-	defer os.Setenv("XDG_CONFIG_HOME", origConfigDir)
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 	creds := &Credentials{
 		ServerURL:    "https://example.com",
@@ -50,7 +49,7 @@ func TestFileFallbackRoundtrip(t *testing.T) {
 	}
 
 	_, err = fileLoad()
-	if err != ErrNotLoggedIn {
+	if !errors.Is(err, ErrNotLoggedIn) {
 		t.Errorf("expected ErrNotLoggedIn, got %v", err)
 	}
 
@@ -58,10 +57,8 @@ func TestFileFallbackRoundtrip(t *testing.T) {
 }
 
 func TestCredentialsScopeRoundtrip(t *testing.T) {
-	origConfigDir := os.Getenv("XDG_CONFIG_HOME")
 	tmpDir := t.TempDir()
-	os.Setenv("XDG_CONFIG_HOME", tmpDir)
-	defer os.Setenv("XDG_CONFIG_HOME", origConfigDir)
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 	creds := &Credentials{
 		ServerURL:    "https://example.com",

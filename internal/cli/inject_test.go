@@ -1,15 +1,13 @@
 package cli
 
 import (
-	"os"
 	"testing"
 )
 
 func TestExpandEnvTemplate(t *testing.T) {
-	os.Setenv("MY_VAULT", "Production")
-	os.Setenv("MY_ITEM", "MySQL")
-	defer os.Unsetenv("MY_VAULT")
-	defer os.Unsetenv("MY_ITEM")
+	t.Setenv("MY_VAULT", "Production")
+	t.Setenv("MY_ITEM", "MySQL")
+	t.Setenv("UNDEFINED", "")
 
 	cases := []struct {
 		input string

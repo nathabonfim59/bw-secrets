@@ -1,11 +1,11 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -14,25 +14,20 @@ import (
 	"github.com/nathabonfim59/bw-secrets/internal/keyring"
 )
 
-func getClient() (*api.Client, *keyring.Credentials, error) {
+func getClient(ctx context.Context) (*api.Client, *keyring.Credentials, error) {
 	creds, err := keyring.LoadProfile(activeProfile.Name)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	url := serverURL()
-	if url == "" {
-		url = creds.ServerURL
-	}
+	url := cmp.Or(serverURL(), creds.ServerURL)
 
 	expiry := tokenExpiry(creds.AccessToken)
 	if expiry >= 0 && expiry < 5*time.Minute {
 		client := api.NewClient(url)
-		tokenResp, err := client.RefreshToken(context.Background(), creds.RefreshToken)
+		tokenResp, err := client.RefreshToken(ctx, creds.RefreshToken)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Session expired — run 'bw-secrets unlock'")
-			os.Exit(2)
-			return nil, nil, nil
+			return nil, nil, fmt.Errorf("refreshing session (run 'bw-secrets unlock' if expired): %w", err)
 		}
 		creds.AccessToken = tokenResp.AccessToken
 		creds.RefreshToken = tokenResp.RefreshToken

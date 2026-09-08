@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -74,7 +73,7 @@ Use --folder to restrict the session to a single personal folder, or
 		client := api.NewClient(serverURL)
 
 		fmt.Fprintln(os.Stderr, "Authenticating...")
-		prelogin, err := client.Prelogin(context.Background(), email)
+		prelogin, err := client.Prelogin(cmd.Context(), email)
 		if err != nil {
 			return fmt.Errorf("prelogin: %w", err)
 		}
@@ -88,10 +87,9 @@ Use --folder to restrict the session to a single personal folder, or
 		passwordHash := crypto.MakePasswordHash(masterKey, password)
 
 		deviceID := newUUID()
-		tokenResp, err := client.Login(context.Background(), email, passwordHash, deviceID)
+		tokenResp, err := client.Login(cmd.Context(), email, passwordHash, deviceID)
 		if err != nil {
-			var twoFactor *api.TwoFactorError
-			if errors.As(err, &twoFactor) {
+			if twoFactor, ok := errors.AsType[*api.TwoFactorError](err); ok {
 				fmt.Fprint(os.Stderr, "TOTP code: ")
 				totpBytes, terr := term.ReadPassword(int(os.Stdin.Fd()))
 				fmt.Fprintln(os.Stderr)
@@ -107,7 +105,7 @@ Use --folder to restrict the session to a single personal folder, or
 					provider = twoFactor.Providers[0]
 				}
 				fmt.Fprintln(os.Stderr, "Verifying...")
-				tokenResp, err = client.LoginWithTwoFactor(context.Background(), email, passwordHash, provider, totp, deviceID)
+				tokenResp, err = client.LoginWithTwoFactor(cmd.Context(), email, passwordHash, provider, totp, deviceID)
 				if err != nil {
 					return fmt.Errorf("login with 2FA: %w", err)
 				}
@@ -139,7 +137,7 @@ Use --folder to restrict the session to a single personal folder, or
 
 		if loginFolder != "" || loginCollection != "" {
 			client.SetAccessToken(tokenResp.AccessToken)
-			syncResp, err := client.Sync(context.Background())
+			syncResp, err := client.Sync(cmd.Context())
 			if err != nil {
 				return fmt.Errorf("syncing vault for scope lookup: %w", err)
 			}

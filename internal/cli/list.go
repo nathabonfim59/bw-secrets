@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -21,7 +20,7 @@ var listCmd = &cobra.Command{
 	Long:  "Syncs the vault and lists all items, optionally filtered by vault name or item type.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient()
+		client, creds, err := getClient(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -31,7 +30,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 
-		syncResp, err := client.Sync(context.Background())
+		syncResp, err := client.Sync(cmd.Context())
 		if err != nil {
 			return fmt.Errorf("syncing vault: %w", err)
 		}

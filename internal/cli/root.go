@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 
@@ -40,13 +41,7 @@ func init() {
 }
 
 func serverURL() string {
-	if serverFlag != "" {
-		return serverFlag
-	}
-	if s := os.Getenv("BW_SECRETS_SERVER"); s != "" {
-		return s
-	}
-	return ""
+	return cmp.Or(serverFlag, os.Getenv("BW_SECRETS_SERVER"))
 }
 
 func Execute() {

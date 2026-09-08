@@ -1,8 +1,8 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -40,11 +40,11 @@ func TestLoginReturnsTwoFactorError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	_, err := client.Login(context.Background(), "test@example.com", "hash", "device-id")
+	_, err := client.Login(t.Context(), "test@example.com", "hash", "device-id")
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	tfe, ok := err.(*TwoFactorError)
+	tfe, ok := errors.AsType[*TwoFactorError](err)
 	if !ok {
 		t.Fatalf("expected TwoFactorError, got %T: %v", err, err)
 	}
@@ -67,7 +67,7 @@ func TestLoginWithTwoFactor(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	resp, err := client.LoginWithTwoFactor(context.Background(), "test@example.com", "hash", "0", "123456", "device-id")
+	resp, err := client.LoginWithTwoFactor(t.Context(), "test@example.com", "hash", "0", "123456", "device-id")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,11 +93,11 @@ func TestHTTP400NotTwoFactor(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL)
-	_, err := client.Prelogin(context.Background(), "test@example.com")
+	_, err := client.Prelogin(t.Context(), "test@example.com")
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if _, ok := err.(*TwoFactorError); ok {
+	if _, ok := errors.AsType[*TwoFactorError](err); ok {
 		t.Error("should not be a TwoFactorError for non-2FA 400")
 	}
 }

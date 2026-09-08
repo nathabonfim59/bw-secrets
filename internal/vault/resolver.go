@@ -18,24 +18,22 @@ type SecretURI struct {
 }
 
 func ParseURI(uri string) (*SecretURI, error) {
-	if !strings.HasPrefix(uri, "bw://") {
+	rest, ok := strings.CutPrefix(uri, "bw://")
+	if !ok {
 		return nil, fmt.Errorf("%w: missing bw:// prefix", ErrInvalidURI)
 	}
-	rest := strings.TrimPrefix(uri, "bw://")
 	if rest == "" {
 		return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 	}
 
 	su := &SecretURI{}
 
-	if idx := strings.Index(rest, "//"); idx >= 0 {
-		orgPart := rest[:idx]
-		rest2 := rest[idx+2:]
+	if orgPart, rest2, ok := strings.Cut(rest, "//"); ok {
 		if orgPart == "" || rest2 == "" {
 			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 		}
-		parts := strings.SplitN(rest2, "/", 2)
-		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		collection, remaining, ok := strings.Cut(rest2, "/")
+		if !ok || collection == "" || remaining == "" {
 			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 		}
 		var err error
@@ -43,35 +41,35 @@ func ParseURI(uri string) (*SecretURI, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid organization name: %s", ErrInvalidURI, err)
 		}
-		su.CollectionName, err = url.PathUnescape(parts[0])
+		su.CollectionName, err = url.PathUnescape(collection)
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid collection name: %s", ErrInvalidURI, err)
 		}
-		rest = parts[1]
+		rest = remaining
 	} else {
-		parts := strings.SplitN(rest, "/", 2)
-		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		vault, remaining, ok := strings.Cut(rest, "/")
+		if !ok || vault == "" || remaining == "" {
 			return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 		}
 		var err error
-		su.VaultName, err = url.PathUnescape(parts[0])
+		su.VaultName, err = url.PathUnescape(vault)
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid vault name: %s", ErrInvalidURI, err)
 		}
-		rest = parts[1]
+		rest = remaining
 	}
 
-	parts := strings.SplitN(rest, "/", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+	item, field, ok := strings.Cut(rest, "/")
+	if !ok || item == "" || field == "" {
 		return nil, fmt.Errorf("%w: got %q", ErrInvalidURI, uri)
 	}
 
 	var err error
-	su.ItemName, err = url.PathUnescape(parts[0])
+	su.ItemName, err = url.PathUnescape(item)
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid item name: %s", ErrInvalidURI, err)
 	}
-	su.FieldName, err = url.PathUnescape(parts[1])
+	su.FieldName, err = url.PathUnescape(field)
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid field name: %s", ErrInvalidURI, err)
 	}
