@@ -7,11 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// version is injected at build time via:
+//
+//	-ldflags="-X github.com/nathabonfim59/bw-secrets/internal/cli.version=vX.Y.Z"
+var version = "dev"
+
 var serverFlag string
 
 var rootCmd = &cobra.Command{
-	Use:   "bw-secrets",
-	Short: "Bitwarden secret references for the terminal (like op://).",
+	Use:     "bw-secrets",
+	Short:   "Bitwarden secret references for the terminal (like op://).",
+	Version: version,
 	Long: `bw-secrets resolves secrets from your Bitwarden vault using URIs
 like bw://VaultName/ItemName/FieldName.
 

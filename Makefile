@@ -3,11 +3,11 @@
 BINARY    := bw-secrets
 BUILD_DIR := bin
 DIST_DIR  := dist
-LDFLAGS   := -s -w
 VERSION   ?= dev
+LDFLAGS   := -s -w -X github.com/nathabonfim59/bw-secrets/internal/cli.version=$(VERSION)
 
 build:
-	go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY) ./cmd/bw-secrets
+	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY) ./cmd/bw-secrets
 
 test:
 	go test ./...
@@ -44,11 +44,11 @@ release-tag:
 
 release-build: build
 	@mkdir -p $(DIST_DIR)
-	GOOS=linux   GOARCH=amd64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_amd64       ./cmd/bw-secrets
-	GOOS=linux   GOARCH=arm64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_arm64       ./cmd/bw-secrets
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_amd64_musl  ./cmd/bw-secrets
-	GOOS=darwin  GOARCH=amd64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_darwin_amd64      ./cmd/bw-secrets
-	GOOS=darwin  GOARCH=arm64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_darwin_arm64      ./cmd/bw-secrets
-	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_windows_amd64.exe ./cmd/bw-secrets
-	GOOS=windows GOARCH=arm64 go build -ldflags "$(LDFLAGS) -X main.version=$(VERSION)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_windows_arm64.exe ./cmd/bw-secrets
+	GOOS=linux   GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_amd64       ./cmd/bw-secrets
+	GOOS=linux   GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_arm64       ./cmd/bw-secrets
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_linux_amd64_musl  ./cmd/bw-secrets
+	GOOS=darwin  GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_darwin_amd64      ./cmd/bw-secrets
+	GOOS=darwin  GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_darwin_arm64      ./cmd/bw-secrets
+	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_windows_amd64.exe ./cmd/bw-secrets
+	GOOS=windows GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(DIST_DIR)/$(BINARY)_$(VERSION)_windows_arm64.exe ./cmd/bw-secrets
 	@ls -lh $(DIST_DIR)/

@@ -9,7 +9,7 @@ make vet            # go vet ./...
 make clean
 ```
 
-CI runs `go vet`, `go test -race ./...`, then `go build ./cmd/bw-secrets`. Run vet before test.
+CI runs `go vet`, `go test -race ./...`, then `go build ./cmd/bw-secrets`, plus `goreleaser check` (`.goreleaser.yaml`). Run vet before test.
 
 Single test: `go test ./internal/crypto/...` or `go test -run TestName ./internal/...`
 
@@ -27,7 +27,16 @@ Go CLI (module: `github.com/nathabonfim59/bw-secrets`). Single binary, no submod
 ## Release
 
 ```bash
-make release VERSION=v1.2.3
+make release VERSION=v1.2.3   # checks tree + tags locally, then: git push origin v1.2.3
 ```
 
-Tags and cross-compiles (linux/darwin/windows, amd64/arm64 + musl). Push tag to trigger CI release workflow.
+Pushing a `v*` tag triggers the GoReleaser release job in CI (single ubuntu runner,
+pure Go): tar.gz archives, Windows zip, macOS universal binary, and deb/rpm/Arch
+packages (amd64), plus checksums — see `.goreleaser.yaml`.
+
+Validate release changes locally before tagging:
+
+```bash
+goreleaser check
+goreleaser release --snapshot --clean
+```

@@ -1,0 +1,70 @@
+version: 2
+
+project_name: bw-secrets
+
+# bw-secrets is pure Go (CGO_ENABLED=0), so the whole matrix — including
+# the macOS universal binary and the deb/rpm/Arch packages — builds from
+# a single ubuntu runner. No per-OS split needed (contrast: Fyne apps).
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: bw-secrets
+    main: ./cmd/bw-secrets
+    binary: bw-secrets
+    env:
+      - CGO_ENABLED=0
+    # linux: amd64 only (packaged below for Arch/Debian/RHEL).
+    # darwin: both arches, merged into a universal binary.
+    # windows: amd64 only.
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: linux
+        goarch: arm64
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X github.com/nathabonfim59/bw-secrets/internal/cli.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+universal_binaries:
+  # Folds darwin_amd64 + darwin_arm64 into one binary; `replace` drops
+  # the single-arch artifacts so macOS ships as darwin_all only.
+  - replace: true
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+# Linux packages: Arch (pacman), Debian/Ubuntu, RHEL/Fedora — amd64.
+# GoReleaser adds the built binary at bindir automatically.
+nfpms:
+  - id: packages
+    package_name: bw-secrets
+    file_name_template: "{{ .ConventionalFileName }}"
+    maintainer: Nathanael Bonfim <dev@nathabonfim59.com>
+    homepage: https://github.com/nathabonfim59/bw-secrets
+    description: Bitwarden secret references for the terminal (like op://)
+    license: MIT
+    bindir: /usr/bin
+    formats:
+      - archlinux
+      - deb
+      - rpm
+    deb:
+      lintian_overrides:
+        - statically-linked-binary
+
+checksum:
+  name_template: "checksums.txt"

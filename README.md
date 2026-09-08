@@ -10,6 +10,31 @@ bw-secrets talks directly to the same HTTP API the Bitwarden browser extension u
 
 ## Install
 
+Direct downloads pull the latest release automatically:
+
+<!-- The Windows logo is inlined as a data URI: simple-icons removed
+     all Microsoft marks after a legal request, so logo=windows no
+     longer renders anything. -->
+
+| Linux | macOS | Windows |
+| :---: | :---: | :---: |
+| [![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://github.com/nathabonfim59/bw-secrets/releases/latest/download/bw-secrets_linux_amd64.deb)<br>[![Red Hat](https://img.shields.io/badge/Red_Hat-EE0000?style=for-the-badge&logo=redhat&logoColor=white)](https://github.com/nathabonfim59/bw-secrets/releases/latest/download/bw-secrets_linux_x86_64.rpm)<br>[![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=for-the-badge&logo=archlinux&logoColor=white)](https://github.com/nathabonfim59/bw-secrets/releases/latest/download/bw-secrets_linux_x86_64.pkg.tar.zst) | [![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/nathabonfim59/bw-secrets/releases/latest/download/bw-secrets_darwin_all.tar.gz) | [![Windows](https://img.shields.io/badge/Windows-0078D4?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI%2BPHBhdGggZD0iTTAgMy40NDlMOS43NSAyLjF2OS40NTFIMG0xMC45NDktOS42MDJMMjQgMHYxMS40SDEwLjk0OU0wIDEyLjZoOS43NXY5LjQ1MUwwIDIwLjY5OU0xMC45NDkgMTIuNkgyNFYyNGwtMTIuOS0xLjgwMSIvPjwvc3ZnPg%3D%3D&logoColor=white)](https://github.com/nathabonfim59/bw-secrets/releases/latest/download/bw-secrets_windows_amd64.zip) |
+
+The macOS download is a **universal** binary (Intel + Apple Silicon).
+The Linux packages install to `/usr/bin/bw-secrets`:
+
+| Platform | Install |
+| --- | --- |
+| Debian/Ubuntu | `sudo apt install ./bw-secrets_*_amd64.deb` |
+| RHEL/Fedora | `sudo dnf install ./bw-secrets-*.x86_64.rpm` |
+| Arch Linux | `sudo pacman -U ./bw-secrets-*-x86_64.pkg.tar.zst` |
+
+Archives (`.tar.gz`/`.zip`) are available on the
+[releases page](https://github.com/nathabonfim59/bw-secrets/releases/latest)
+for portable use.
+
+With Go:
+
 ```bash
 go install github.com/nathabonfim59/bw-secrets@latest
 ```
