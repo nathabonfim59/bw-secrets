@@ -20,6 +20,9 @@ func getClient(ctx context.Context) (*api.Client, *keyring.Credentials, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	if creds.AccessToken == "" && creds.EncKey == "" {
+		return nil, nil, fmt.Errorf("profile %q is locked — run 'bw-secrets login' or 'bw-secrets unlock'", activeProfile.Name)
+	}
 
 	url := cmp.Or(serverURL(), creds.ServerURL)
 

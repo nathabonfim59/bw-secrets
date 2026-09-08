@@ -25,6 +25,7 @@ type Scope struct {
 }
 
 type Credentials struct {
+	Remember     bool   `json:"remember,omitzero"`
 	ServerURL    string `json:"server_url"`
 	Email        string `json:"email"`
 	AccessToken  string `json:"access_token"`

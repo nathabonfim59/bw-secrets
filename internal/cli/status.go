@@ -26,6 +26,10 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		if creds.AccessToken == "" && creds.EncKey == "" {
+			fmt.Fprintf(os.Stderr, "Locked; remembered %s on %s\n", creds.Email, creds.ServerURL)
+			return nil
+		}
 
 		expiresIn := tokenExpiry(creds.AccessToken)
 		fmt.Fprintf(os.Stderr, "Logged in as %s on %s", creds.Email, creds.ServerURL)

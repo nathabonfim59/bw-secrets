@@ -80,6 +80,7 @@ master password, and re-authenticates to obtain fresh tokens.`,
 		copy(rawKey[32:64], symKey.MACKey[:])
 
 		newCreds := &keyring.Credentials{
+			Remember:     creds.Remember,
 			ServerURL:    url,
 			Email:        creds.Email,
 			AccessToken:  tokenResp.AccessToken,

@@ -19,6 +19,9 @@ var (
 )
 
 type Vault struct {
+	folders           map[string]string
+	collectionOrgs    map[string]string
+	scope             *keyring.Scope
 	items             []decryptedCipher
 	collectionCiphers map[string][]decryptedCipher
 	collectionsByID   map[string]string
@@ -33,6 +36,8 @@ type decryptedCipher struct {
 
 func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring.Scope) *Vault {
 	v := &Vault{
+		scope:             scope,
+		collectionOrgs:    make(map[string]string),
 		collectionCiphers: make(map[string][]decryptedCipher),
 		collectionsByID:   make(map[string]string),
 		orgByID:           make(map[string]string),
@@ -43,6 +48,7 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 	}
 
 	foldersByID := make(map[string]string)
+	v.folders = foldersByID
 	for _, f := range syncResp.Folders {
 		name := f.Name
 		if decrypted, err := decryptField(f.Name, symKey); err == nil {
@@ -57,6 +63,7 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 			name = decrypted
 		}
 		v.collectionsByID[col.ID] = name
+		v.collectionOrgs[col.ID] = col.OrganizationID
 	}
 
 	for _, c := range syncResp.Ciphers {
@@ -108,15 +115,19 @@ func (v *Vault) Items() []decryptedCipher {
 }
 
 func (v *Vault) FindByName(name, vaultName string) (*decryptedCipher, error) {
+	folderID := ""
+	if _, ok := v.folders[vaultName]; ok {
+		folderID = vaultName
+	}
 	var matches []decryptedCipher
 	for i := range v.items {
 		dc := &v.items[i]
 		if vaultName != "" && vaultName != "*" {
-			if !strings.EqualFold(dc.VaultName, vaultName) {
+			if folderID != "" && (dc.Cipher.FolderID == nil || *dc.Cipher.FolderID != folderID) || folderID == "" && !strings.EqualFold(dc.VaultName, vaultName) {
 				continue
 			}
 		}
-		if strings.EqualFold(dc.Name, name) {
+		if dc.Cipher.ID == name || strings.EqualFold(dc.Name, name) {
 			matches = append(matches, *dc)
 		}
 	}
@@ -134,34 +145,25 @@ func (v *Vault) FindByName(name, vaultName string) (*decryptedCipher, error) {
 }
 
 func (v *Vault) FindByOrgCollection(orgName, collectionName, itemName string) (*decryptedCipher, error) {
-	orgID := ""
-	lowerOrg := strings.ToLower(orgName)
-	for id, name := range v.orgByID {
-		if strings.ToLower(name) == lowerOrg {
-			orgID = id
-			break
-		}
+	orgID, err := SelectID(v.orgByID, orgName)
+	if err != nil {
+		return nil, err
 	}
-	if orgID == "" {
-		return nil, &ItemNotFoundError{Name: itemName, Vault: orgName + "//" + collectionName}
-	}
-
-	collectionID := ""
-	lowerColl := strings.ToLower(collectionName)
+	collections := make(map[string]string)
 	for id, name := range v.collectionsByID {
-		if strings.ToLower(name) == lowerColl {
-			collectionID = id
-			break
+		if v.collectionOrgs[id] == orgID {
+			collections[id] = name
 		}
 	}
-	if collectionID == "" {
-		return nil, &ItemNotFoundError{Name: itemName, Vault: orgName + "//" + collectionName}
+	collectionID, err := SelectID(collections, collectionName)
+	if err != nil {
+		return nil, err
 	}
 
 	ciphers := v.collectionCiphers[collectionID]
 	var matches []decryptedCipher
 	for _, dc := range ciphers {
-		if strings.EqualFold(dc.Name, itemName) {
+		if dc.Cipher.ID == itemName || strings.EqualFold(dc.Name, itemName) {
 			matches = append(matches, dc)
 		}
 	}
