@@ -31,7 +31,7 @@ current environment, enabling multi-environment config templates:
   APP_ENV=prod bw-secrets inject -i config.yml.tpl`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		v, symKey, err := loadVault(cmd.Context())
+		v, _, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ current environment, enabling multi-environment config templates:
 			if err != nil {
 				return fmt.Errorf("parsing %q: %w", uri, err)
 			}
-			val, _, _, err := v.ResolveValue(parsed, symKey)
+			val, _, _, err := v.ResolveValue(parsed)
 			if err != nil {
 				return fmt.Errorf("resolving %q: %w", uri, err)
 			}

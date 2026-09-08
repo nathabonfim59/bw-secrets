@@ -70,7 +70,7 @@ func TestVaultNew(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 	items := v.Items()
 	if len(items) != 1 {
 		t.Fatalf("got %d items, want 1 (deleted should be filtered)", len(items))
@@ -102,10 +102,10 @@ func TestResolveLoginPassword(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://Personal/Google/password")
-	val, vault, item, err := v.ResolveValue(uri, symKey)
+	val, vault, item, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,10 +135,10 @@ func TestResolveLoginUsername(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/username")
-	val, _, _, err := v.ResolveValue(uri, symKey)
+	val, _, _, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,10 +159,10 @@ func TestResolveSecureNote(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/My Note/notes")
-	val, _, _, err := v.ResolveValue(uri, symKey)
+	val, _, _, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,10 +187,10 @@ func TestResolveCard(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Visa/number")
-	val, _, _, err := v.ResolveValue(uri, symKey)
+	val, _, _, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,10 +214,10 @@ func TestResolveIdentity(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Me/firstname")
-	val, _, _, err := v.ResolveValue(uri, symKey)
+	val, _, _, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,10 +240,10 @@ func TestResolveItemNotFound(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://Personal/Facebook/password")
-	_, _, _, err := v.ResolveValue(uri, symKey)
+	_, _, _, err := v.ResolveValue(uri)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -266,10 +266,10 @@ func TestResolveFieldNotFound(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/nonexistent")
-	_, _, _, err := v.ResolveValue(uri, symKey)
+	_, _, _, err := v.ResolveValue(uri)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -304,10 +304,10 @@ func TestResolveMultipleItems(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Google/password")
-	_, _, _, err := v.ResolveValue(uri, symKey)
+	_, _, _, err := v.ResolveValue(uri)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -337,10 +337,10 @@ func TestResolveCustomField(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://No Folder/Server/api key")
-	val, _, _, err := v.ResolveValue(uri, symKey)
+	val, _, _, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,10 +409,12 @@ func TestResolveOrgItem(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	syncResp.Profile = organizationProfile(t, symKey, symKey, "4")
+	syncResp.Ciphers[0].OrganizationID = new("org-1")
+	v := mustNew(t, syncResp, symKey, nil)
 
 	uri, _ := ParseURI("bw://Acme//Engineering/Database/password")
-	val, vault, item, err := v.ResolveValue(uri, symKey)
+	val, vault, item, err := v.ResolveValue(uri)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -450,7 +452,7 @@ func TestVaultNewWithFolderScope(t *testing.T) {
 		},
 	}
 	scope := &keyring.Scope{Type: "folder", ID: "folder-1", Name: "Work"}
-	v := New(syncResp, symKey, scope)
+	v := mustNew(t, syncResp, symKey, scope)
 
 	items := v.Items()
 	if len(items) != 1 {
@@ -489,7 +491,11 @@ func TestVaultNewWithCollectionScope(t *testing.T) {
 		},
 	}
 	scope := &keyring.Scope{Type: "collection", ID: "coll-1", Name: "Engineering"}
-	v := New(syncResp, symKey, scope)
+	syncResp.Profile = organizationProfile(t, symKey, symKey, "4")
+	for i := range syncResp.Ciphers {
+		syncResp.Ciphers[i].OrganizationID = new("org-1")
+	}
+	v := mustNew(t, syncResp, symKey, scope)
 
 	items := v.Items()
 	if len(items) != 1 {
@@ -516,7 +522,7 @@ func TestVaultNewNoScope(t *testing.T) {
 			},
 		},
 	}
-	v := New(syncResp, symKey, nil)
+	v := mustNew(t, syncResp, symKey, nil)
 	if len(v.Items()) != 2 {
 		t.Errorf("got %d items, want 2 (nil scope = all)", len(v.Items()))
 	}

@@ -21,7 +21,7 @@ var getCmd = &cobra.Command{
 By default, only metadata is shown. Use --reveal to output the actual value.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		v, symKey, err := loadVault(cmd.Context())
+		v, _, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -31,7 +31,7 @@ By default, only metadata is shown. Use --reveal to output the actual value.`,
 			return err
 		}
 
-		value, vaultName, itemName, err := v.ResolveValue(uri, symKey)
+		value, vaultName, itemName, err := v.ResolveValue(uri)
 		if err != nil {
 			return err
 		}

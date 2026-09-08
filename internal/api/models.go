@@ -31,10 +31,12 @@ type SyncResponse struct {
 }
 
 type Profile struct {
+	PrivateKey    string         `json:"PrivateKey"`
 	Organizations []Organization `json:"Organizations"`
 }
 
 type Organization struct {
+	Key  string `json:"Key"`
 	ID   string `json:"Id"`
 	Name string `json:"Name"`
 }
@@ -46,6 +48,7 @@ type Collection struct {
 }
 
 type Cipher struct {
+	Key            string    `json:"Key"`
 	ID             string    `json:"Id"`
 	OrganizationID *string   `json:"OrganizationId"`
 	CollectionIDs  []string  `json:"CollectionIds"`
