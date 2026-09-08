@@ -65,17 +65,17 @@ func TestLegacyProfileAndFallbackRecovery(t *testing.T) {
 	if filepath.Base(path) != "credentials.json" || filepath.Base(filepath.Dir(path)) != "bw-secrets" {
 		t.Fatalf("legacy path changed: %s", path)
 	}
-	if err := fileSave(`{"email":"legacy"}`); err != nil {
+	if err := fileSaveProfile("default", `{"email":"legacy"}`); err != nil {
 		t.Fatal(err)
 	}
-	creds, err := Load()
+	creds, err := LoadProfile("default")
 	if err != nil || creds.Email != "legacy" {
 		t.Fatalf("legacy fallback: %v, %v", creds, err)
 	}
 	if err := SaveProfile("default", &Credentials{Email: "updated"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := fileLoad(); !errors.Is(err, ErrNotLoggedIn) {
+	if _, err := fileLoadProfile("default"); !errors.Is(err, ErrNotLoggedIn) {
 		t.Fatalf("stale fallback remains: %v", err)
 	}
 	if _, err := LoadProfile("../default"); err == nil {

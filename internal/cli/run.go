@@ -35,21 +35,10 @@ Examples:
   bw-secrets run --env-file prod.env -- mysqldump ...`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, creds, err := getClient(cmd.Context())
+		v, symKey, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
-
-		symKey, err := getSymmetricKey(creds)
-		if err != nil {
-			return err
-		}
-
-		syncResp, err := client.Sync(cmd.Context())
-		if err != nil {
-			return fmt.Errorf("syncing vault: %w", err)
-		}
-		v := vault.New(syncResp, symKey, creds.Scope)
 
 		combinedEnv := make(map[string]string)
 		for _, kv := range os.Environ() {

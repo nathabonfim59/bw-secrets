@@ -12,6 +12,7 @@ import (
 	"github.com/nathabonfim59/bw-secrets/internal/api"
 	"github.com/nathabonfim59/bw-secrets/internal/crypto"
 	"github.com/nathabonfim59/bw-secrets/internal/keyring"
+	"github.com/nathabonfim59/bw-secrets/internal/vault"
 )
 
 func getClient(ctx context.Context) (*api.Client, *keyring.Credentials, error) {
@@ -41,12 +42,24 @@ func getClient(ctx context.Context) (*api.Client, *keyring.Credentials, error) {
 	return client, creds, nil
 }
 
-func getSymmetricKey(creds *keyring.Credentials) (*crypto.SymmetricKey, error) {
+func loadVault(ctx context.Context) (*vault.Vault, *crypto.SymmetricKey, error) {
+	client, creds, err := getClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	raw, err := base64.StdEncoding.DecodeString(creds.EncKey)
 	if err != nil {
-		return nil, fmt.Errorf("decoding enc key: %w", err)
+		return nil, nil, fmt.Errorf("decoding enc key: %w", err)
 	}
-	return crypto.NewSymmetricKey(raw)
+	key, err := crypto.NewSymmetricKey(raw)
+	if err != nil {
+		return nil, nil, err
+	}
+	synced, err := client.Sync(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("syncing vault: %w", err)
+	}
+	return vault.New(synced, key, creds.Scope), key, nil
 }
 
 func tokenExpiry(accessToken string) time.Duration {

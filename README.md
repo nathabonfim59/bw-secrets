@@ -298,6 +298,18 @@ Fields by item type:
 - `bw-secrets run` masks secrets in subprocess output by default
 - All server communication is over HTTPS
 
+## Release builds
+
+`make release-build` requires GoReleaser and runs `goreleaser build --snapshot
+--clean`. Local binaries use the same platform matrix as CI in `.goreleaser.yaml`
+(Linux amd64, macOS amd64/arm64, Windows amd64), with snapshot versions derived
+from Git. The old separate ARM64 Linux/Windows and musl-named builds are replaced
+by this shared matrix; builds use `CGO_ENABLED=0`.
+
+To validate the complete release packaging locally, run `goreleaser check` and
+`goreleaser release --snapshot --clean`. `make release VERSION=v1.2.3` still creates
+the local tag before building; pushing that tag triggers the published CI release.
+
 ## License
 
 MIT

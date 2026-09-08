@@ -332,7 +332,6 @@ func TestResolveCustomField(t *testing.T) {
 					{
 						Name:  encryptForTest("API Key", symKey),
 						Value: encryptForTest("sk-12345", symKey),
-						Type:  1,
 					},
 				},
 			},

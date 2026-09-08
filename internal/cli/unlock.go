@@ -66,7 +66,11 @@ master password, and re-authenticates to obtain fresh tokens.`,
 			return fmt.Errorf("server returned no encryption key")
 		}
 
-		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, crypto.StretchKey(masterKey))
+		stretchedKey, err := crypto.StretchKey(masterKey)
+		if err != nil {
+			return fmt.Errorf("stretching master key: %w", err)
+		}
+		symKey, err := crypto.ExtractSymmetricKey(tokenResp.Key, stretchedKey)
 		if err != nil {
 			return fmt.Errorf("decrypting symmetric key: %w", err)
 		}

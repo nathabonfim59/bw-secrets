@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"crypto/hmac"
+	"crypto/hkdf"
 	"crypto/sha256"
 	"encoding/base64"
 	"strings"
@@ -27,26 +27,14 @@ func MakePasswordHash(masterKey []byte, password string) string {
 	return base64.StdEncoding.EncodeToString(hash)
 }
 
-func StretchKey(masterKey []byte) []byte {
-	enc := hkdfExpand(masterKey, []byte("enc"), 32)
-	mac := hkdfExpand(masterKey, []byte("mac"), 32)
-	stretched := make([]byte, 64)
-	copy(stretched[0:32], enc)
-	copy(stretched[32:64], mac)
-	return stretched
-}
-
-func hkdfExpand(prk, info []byte, size int) []byte {
-	hashLen := 32
-	result := make([]byte, size)
-	var t []byte
-	for i := byte(1); i <= byte((size+hashLen-1)/hashLen); i++ {
-		h := hmac.New(sha256.New, prk)
-		h.Write(t)
-		h.Write(info)
-		h.Write([]byte{i})
-		t = h.Sum(nil)
-		copy(result[(int(i)-1)*hashLen:], t)
+func StretchKey(masterKey []byte) ([]byte, error) {
+	enc, err := hkdf.Expand(sha256.New, masterKey, "enc", 32)
+	if err != nil {
+		return nil, err
 	}
-	return result
+	mac, err := hkdf.Expand(sha256.New, masterKey, "mac", 32)
+	if err != nil {
+		return nil, err
+	}
+	return append(enc, mac...), nil
 }

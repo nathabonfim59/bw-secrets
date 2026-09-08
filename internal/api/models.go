@@ -10,19 +10,13 @@ type PreloginResponse struct {
 }
 
 type TokenResponse struct {
-	AccessToken   string `json:"access_token"`
-	ExpiresIn     int    `json:"expires_in"`
-	TokenType     string `json:"token_type"`
-	RefreshToken  string `json:"refresh_token"`
-	Key           string `json:"Key"`
-	PrivateKey    string `json:"PrivateKey"`
-	Kdf           int    `json:"Kdf"`
-	KdfIterations int    `json:"KdfIterations"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Key          string `json:"Key"`
 }
 
 type TwoFactorError struct {
-	Providers  []string `json:"TwoFactorProviders"`
-	Raw        string   `json:"-"`
+	Providers []string `json:"TwoFactorProviders"`
 }
 
 func (e *TwoFactorError) Error() string {
@@ -34,16 +28,9 @@ type SyncResponse struct {
 	Folders     []Folder     `json:"Folders"`
 	Collections []Collection `json:"Collections"`
 	Ciphers     []Cipher     `json:"Ciphers"`
-	Sends       []Send       `json:"Sends"`
 }
 
 type Profile struct {
-	ID            string         `json:"Id"`
-	Name          string         `json:"Name"`
-	Email         string         `json:"Email"`
-	Key           string         `json:"Key"`
-	PrivateKey    string         `json:"PrivateKey"`
-	SecurityStamp string         `json:"SecurityStamp"`
 	Organizations []Organization `json:"Organizations"`
 }
 
@@ -56,47 +43,32 @@ type Collection struct {
 	ID             string `json:"Id"`
 	OrganizationID string `json:"OrganizationId"`
 	Name           string `json:"Name"`
-	ExternalID     string `json:"ExternalId"`
 }
 
 type Cipher struct {
-	ID             string      `json:"Id"`
-	OrganizationID *string     `json:"OrganizationId"`
-	CollectionIDs  []string    `json:"CollectionIds"`
-	FolderID       *string     `json:"FolderId"`
-	Type           int         `json:"Type"`
-	Name           string      `json:"Name"`
-	Notes          *string     `json:"Notes"`
-	Favorite       bool        `json:"Favorite"`
-	Fields         []Field     `json:"Fields"`
-	Login          *Login      `json:"Login"`
-	SecureNote     *SecureNote `json:"SecureNote"`
-	Card           *Card       `json:"Card"`
-	Identity       *Identity   `json:"Identity"`
-	Reprompt       int         `json:"Reprompt"`
-	DeletedDate    *string     `json:"DeletedDate"`
+	ID             string    `json:"Id"`
+	OrganizationID *string   `json:"OrganizationId"`
+	CollectionIDs  []string  `json:"CollectionIds"`
+	FolderID       *string   `json:"FolderId"`
+	Type           int       `json:"Type"`
+	Name           string    `json:"Name"`
+	Notes          *string   `json:"Notes"`
+	Fields         []Field   `json:"Fields"`
+	Login          *Login    `json:"Login"`
+	Card           *Card     `json:"Card"`
+	Identity       *Identity `json:"Identity"`
+	DeletedDate    *string   `json:"DeletedDate"`
 }
 
 type Field struct {
 	Name  string `json:"Name"`
 	Value string `json:"Value"`
-	Type  int    `json:"Type"`
 }
 
 type Login struct {
-	URIs     []LoginURI `json:"Uris"`
-	Username string     `json:"Username"`
-	Password string     `json:"Password"`
-	TOTP     *string    `json:"Totp"`
-}
-
-type LoginURI struct {
-	Match *int   `json:"Match"`
-	URI   string `json:"Uri"`
-}
-
-type SecureNote struct {
-	Type int `json:"Type"`
+	Username string  `json:"Username"`
+	Password string  `json:"Password"`
+	TOTP     *string `json:"Totp"`
 }
 
 type Card struct {
@@ -119,9 +91,6 @@ type Identity struct {
 }
 
 type Folder struct {
-	ID     string `json:"Id"`
-	Name   string `json:"Name"`
-	Object string `json:"Object"`
+	ID   string `json:"Id"`
+	Name string `json:"Name"`
 }
-
-type Send struct{}

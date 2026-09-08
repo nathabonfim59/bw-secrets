@@ -33,10 +33,6 @@ type Credentials struct {
 	Scope        *Scope `json:"scope,omitempty"`
 }
 
-func Save(creds *Credentials) error {
-	return SaveProfile(keyName, creds)
-}
-
 func SaveProfile(name string, creds *Credentials) error {
 	if err := profile.Validate(name); err != nil {
 		return err
@@ -50,10 +46,6 @@ func SaveProfile(name string, creds *Credentials) error {
 		return fileSaveProfile(name, string(data))
 	}
 	return fileDeleteProfile(name)
-}
-
-func Load() (*Credentials, error) {
-	return LoadProfile(keyName)
 }
 
 func LoadProfile(name string) (*Credentials, error) {
@@ -74,10 +66,6 @@ func LoadProfile(name string) (*Credentials, error) {
 	return &creds, nil
 }
 
-func Delete() error {
-	return DeleteProfile(keyName)
-}
-
 func DeleteProfile(name string) error {
 	if err := profile.Validate(name); err != nil {
 		return err
@@ -89,10 +77,6 @@ func DeleteProfile(name string) error {
 		err = nil
 	}
 	return errors.Join(err, fileErr)
-}
-
-func filePath() (string, error) {
-	return profileFilePath(keyName)
 }
 
 func profileFilePath(name string) (string, error) {
@@ -109,10 +93,6 @@ func profileFilePath(name string) (string, error) {
 	return filepath.Join(configDir, "bw-secrets", "profiles", name, "credentials.json"), nil
 }
 
-func fileSave(data string) error {
-	return fileSaveProfile(keyName, data)
-}
-
 func fileSaveProfile(name, data string) error {
 	path, err := profileFilePath(name)
 	if err != nil {
@@ -122,10 +102,6 @@ func fileSaveProfile(name, data string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(data), 0600)
-}
-
-func fileLoad() (string, error) {
-	return fileLoadProfile(keyName)
 }
 
 func fileLoadProfile(name string) (string, error) {
@@ -141,10 +117,6 @@ func fileLoadProfile(name string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
-}
-
-func fileDelete() error {
-	return fileDeleteProfile(keyName)
 }
 
 func fileDeleteProfile(name string) error {

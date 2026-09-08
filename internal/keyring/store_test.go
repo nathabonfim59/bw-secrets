@@ -22,12 +22,12 @@ func TestFileFallbackRoundtrip(t *testing.T) {
 
 	path := filepath.Join(tmpDir, "bw-secrets", "credentials.json")
 
-	err := fileSave(`{"server_url":"https://example.com","email":"test@example.com","access_token":"access-token","refresh_token":"refresh-token","enc_key":"enc-key"}`)
+	err := fileSaveProfile("default", `{"server_url":"https://example.com","email":"test@example.com","access_token":"access-token","refresh_token":"refresh-token","enc_key":"enc-key"}`)
 	if err != nil {
 		t.Fatalf("fileSave failed: %v", err)
 	}
 
-	data, err := fileLoad()
+	data, err := fileLoadProfile("default")
 	if err != nil {
 		t.Fatalf("fileLoad failed: %v", err)
 	}
@@ -43,12 +43,12 @@ func TestFileFallbackRoundtrip(t *testing.T) {
 		t.Errorf("permissions = %o, want 0600", perm)
 	}
 
-	err = fileDelete()
+	err = fileDeleteProfile("default")
 	if err != nil {
 		t.Fatalf("fileDelete failed: %v", err)
 	}
 
-	_, err = fileLoad()
+	_, err = fileLoadProfile("default")
 	if !errors.Is(err, ErrNotLoggedIn) {
 		t.Errorf("expected ErrNotLoggedIn, got %v", err)
 	}
@@ -74,11 +74,11 @@ func TestCredentialsScopeRoundtrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := fileSave(string(data)); err != nil {
+	if err := fileSaveProfile("default", string(data)); err != nil {
 		t.Fatal(err)
 	}
 
-	loadedData, err := fileLoad()
+	loadedData, err := fileLoadProfile("default")
 	if err != nil {
 		t.Fatal(err)
 	}
