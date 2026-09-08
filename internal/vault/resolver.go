@@ -77,7 +77,7 @@ func ParseURI(uri string) (*SecretURI, error) {
 	return su, nil
 }
 
-func (v *Vault) ResolveValue(uri *SecretURI, symKey *crypto.SymmetricKey) (string, string, string, error) {
+func (v *Vault) ResolveValue(uri *SecretURI) (string, string, string, error) {
 	var dc *decryptedCipher
 	var err error
 	vaultDisplay := ""
@@ -97,6 +97,7 @@ func (v *Vault) ResolveValue(uri *SecretURI, symKey *crypto.SymmetricKey) (strin
 	}
 
 	fieldName := strings.ToLower(uri.FieldName)
+	symKey := dc.key
 	c := dc.Cipher
 
 	encValue := extractFieldEncValue(c, fieldName, symKey)

@@ -1,7 +1,9 @@
 package vault
 
 import (
+	"crypto/rsa"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -29,12 +31,17 @@ type Vault struct {
 }
 
 type decryptedCipher struct {
+	key       *crypto.SymmetricKey
 	Cipher    api.Cipher
 	Name      string
 	VaultName string
 }
 
-func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring.Scope) *Vault {
+func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring.Scope) (*Vault, error) {
+	orgKeys, err := organizationKeys(syncResp, symKey)
+	if err != nil {
+		return nil, err
+	}
 	v := &Vault{
 		scope:             scope,
 		collectionOrgs:    make(map[string]string),
@@ -50,17 +57,17 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 	foldersByID := make(map[string]string)
 	v.folders = foldersByID
 	for _, f := range syncResp.Folders {
-		name := f.Name
-		if decrypted, err := decryptField(f.Name, symKey); err == nil {
-			name = decrypted
+		name, err := decryptName(f.Name, symKey)
+		if err != nil {
+			return nil, fmt.Errorf("folder %s: %w", f.ID, err)
 		}
 		foldersByID[f.ID] = name
 	}
 
 	for _, col := range syncResp.Collections {
-		name := col.Name
-		if decrypted, err := decryptField(col.Name, symKey); err == nil {
-			name = decrypted
+		name, err := decryptName(col.Name, orgKeys[col.OrganizationID])
+		if err != nil {
+			return nil, fmt.Errorf("collection %s: %w", col.ID, err)
 		}
 		v.collectionsByID[col.ID] = name
 		v.collectionOrgs[col.ID] = col.OrganizationID
@@ -84,9 +91,23 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 			}
 		}
 
-		name := c.Name
-		if decrypted, err := decryptField(c.Name, symKey); err == nil {
-			name = decrypted
+		key := symKey
+		if c.OrganizationID != nil {
+			key = orgKeys[*c.OrganizationID]
+		}
+		if c.Key != "" {
+			raw, err := decryptField(c.Key, key)
+			if err != nil {
+				return nil, fmt.Errorf("item %s key: %w", c.ID, err)
+			}
+			key, err = crypto.NewSymmetricKey([]byte(raw))
+			if err != nil {
+				return nil, fmt.Errorf("item %s key: %w", c.ID, err)
+			}
+		}
+		name, err := decryptName(c.Name, key)
+		if err != nil {
+			return nil, fmt.Errorf("item %s name: %w", c.ID, err)
 		}
 		vaultName := "No Folder"
 		if c.FolderID != nil {
@@ -96,6 +117,7 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 		}
 
 		dc := decryptedCipher{
+			key:       key,
 			Cipher:    c,
 			Name:      name,
 			VaultName: vaultName,
@@ -107,7 +129,36 @@ func New(syncResp *api.SyncResponse, symKey *crypto.SymmetricKey, scope *keyring
 		}
 	}
 
-	return v
+	return v, nil
+}
+
+func organizationKeys(s *api.SyncResponse, key *crypto.SymmetricKey) (map[string]*crypto.SymmetricKey, error) {
+	keys := make(map[string]*crypto.SymmetricKey)
+	var private *rsa.PrivateKey
+	for _, org := range s.Profile.Organizations {
+		if org.Key == "" {
+			continue
+		}
+		var err error
+		if private == nil {
+			private, err = crypto.DecryptPrivateKey(s.Profile.PrivateKey, key)
+			if err != nil {
+				return nil, fmt.Errorf("account private key: %w", err)
+			}
+		}
+		keys[org.ID], err = crypto.DecryptOrganizationKey(org.Key, private)
+		if err != nil {
+			return nil, fmt.Errorf("organization %s key: %w", org.ID, err)
+		}
+	}
+	return keys, nil
+}
+
+func decryptName(value string, key *crypto.SymmetricKey) (string, error) {
+	if len(value) < 2 || value[1] != '.' || value[0] < '0' || value[0] > '9' {
+		return value, nil
+	}
+	return decryptField(value, key)
 }
 
 func (v *Vault) Items() []decryptedCipher {

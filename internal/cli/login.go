@@ -216,15 +216,17 @@ func authenticate(ctx context.Context, client *api.Client, serverURL, email stri
 }
 
 func resolveFolderScope(syncResp *api.SyncResponse, folderName string, symKey *crypto.SymmetricKey) (*keyring.Scope, error) {
+	v, err := vault.New(syncResp, symKey, nil)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := v.List(vault.ListOptions{Kind: "folders"})
+	if err != nil {
+		return nil, err
+	}
 	names := make(map[string]string)
-	for _, f := range syncResp.Folders {
-		name := f.Name
-		if decrypted, err := crypto.ParseEncString(f.Name); err == nil {
-			if val, derr := decrypted.Decrypt(symKey); derr == nil {
-				name = val
-			}
-		}
-		names[f.ID] = name
+	for _, row := range rows {
+		names[row.ID] = row.Name
 	}
 	id, err := vault.SelectID(names, folderName)
 	if err != nil {
@@ -234,27 +236,17 @@ func resolveFolderScope(syncResp *api.SyncResponse, folderName string, symKey *c
 }
 
 func resolveCollectionScope(syncResp *api.SyncResponse, orgName, collectionName string, symKey *crypto.SymmetricKey) (*keyring.Scope, error) {
-	orgs := make(map[string]string)
-	for _, org := range syncResp.Profile.Organizations {
-		orgs[org.ID] = org.Name
-	}
-	orgID, err := vault.SelectID(orgs, orgName)
+	v, err := vault.New(syncResp, symKey, nil)
 	if err != nil {
 		return nil, err
 	}
-
+	rows, err := v.List(vault.ListOptions{Kind: "collections", Organization: orgName})
+	if err != nil {
+		return nil, err
+	}
 	names := make(map[string]string)
-	for _, col := range syncResp.Collections {
-		if col.OrganizationID != orgID {
-			continue
-		}
-		name := col.Name
-		if decrypted, err := crypto.ParseEncString(col.Name); err == nil {
-			if val, derr := decrypted.Decrypt(symKey); derr == nil {
-				name = val
-			}
-		}
-		names[col.ID] = name
+	for _, row := range rows {
+		names[row.ID] = row.Name
 	}
 	id, err := vault.SelectID(names, collectionName)
 	if err != nil {

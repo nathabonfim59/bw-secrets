@@ -62,7 +62,8 @@ func loadVault(ctx context.Context) (*vault.Vault, *crypto.SymmetricKey, error) 
 	if err != nil {
 		return nil, nil, fmt.Errorf("syncing vault: %w", err)
 	}
-	return vault.New(synced, key, creds.Scope), key, nil
+	v, err := vault.New(synced, key, creds.Scope)
+	return v, key, err
 }
 
 func tokenExpiry(accessToken string) time.Duration {

@@ -104,6 +104,12 @@ func (e *EncString) DecryptWithKey(rawKey []byte) ([]byte, error) {
 }
 
 func (e *EncString) decryptAesCbc256Hmac(key *SymmetricKey) ([]byte, error) {
+	if key == nil {
+		return nil, errors.New("missing decryption key")
+	}
+	if len(e.IV) != aes.BlockSize {
+		return nil, ErrInvalidEncString
+	}
 	mac := hmac.New(sha256.New, key.MACKey[:])
 	mac.Write(e.IV)
 	mac.Write(e.CipherText)

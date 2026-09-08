@@ -49,7 +49,10 @@ func TestListHierarchyAndScope(t *testing.T) {
 		{name: "id", o: ListOptions{Kind: "login", Recursive: true, ID: "c"}, want: []string{"c"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			v := New(sync, nil, tc.scope)
+			v, err := New(sync, nil, tc.scope)
+			if err != nil {
+				t.Fatal(err)
+			}
 			rows, err := v.List(tc.o)
 			if tc.fail {
 				if err == nil {
@@ -69,7 +72,10 @@ func TestListHierarchyAndScope(t *testing.T) {
 			}
 		})
 	}
-	v := New(sync, nil, nil)
+	v, err := New(sync, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if dc, err := v.FindByOrgCollection("o2", "c3", "g"); err != nil || dc.Cipher.ID != "g" {
 		t.Fatalf("UUID resolution: %v", err)
 	}

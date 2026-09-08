@@ -35,7 +35,7 @@ Examples:
   bw-secrets run --env-file prod.env -- mysqldump ...`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		v, symKey, err := loadVault(cmd.Context())
+		v, _, err := loadVault(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("parsing %s=%s: %w", key, value, err)
 			}
-			resolved, _, _, err := v.ResolveValue(parsed, symKey)
+			resolved, _, _, err := v.ResolveValue(parsed)
 			if err != nil {
 				return fmt.Errorf("resolving %s=%s: %w", key, value, err)
 			}

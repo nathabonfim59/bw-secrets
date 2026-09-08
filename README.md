@@ -241,6 +241,12 @@ bw://OrgName//CollectionName/ItemName/FieldName  (organization collections)
 
 The `//` separates organization name from collection name — no ambiguity with folders.
 
+Organization collections and items are decrypted using their organization's key,
+unwrapped with the account private key from the sync response. Items with their
+own encryption key use that key for both names and secret fields. This applies
+to listings, login/rescope selectors, `get`, `inject`, and `run`. Key or encrypted
+name decryption failures return an error instead of displaying ciphertext.
+
 | Component | Meaning | Example |
 |---|---|---|
 | VaultName | Folder name in Bitwarden, or `No Folder` | `Personal`, `No Folder` |
